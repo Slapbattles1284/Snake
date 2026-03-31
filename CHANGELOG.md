@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented here.
 
+## [0.0.3] - 2026-03-31
+
+### Changed
+- Reset obstacle layouts more fairly between later rounds to avoid impossible boards
+- Made obstacle hits remove the object and deal health damage instead of hard-ending the run immediately
+- Improved `aim` logic to dodge active hazards better and make smarter route choices
+- Prevented food from spawning in barricaded positions and cleaned up lingering boss attacks after victory
+
 ## [0.0.2] - 2026-03-31
 
 ### Changed

@@ -207,7 +207,83 @@
     return Math.min(limit, level + Math.floor((round - 1) / 2));
   }
 
-  function randomEmptyCell() {
+  function cellKey(x, y) {
+    return `${x},${y}`;
+  }
+
+  function canReachCell(start, target, obstacleList = obstacles, allowWrap = false) {
+    if (!start || !target) return false;
+
+    const grid = currentGridSize();
+    const blocked = new Set(obstacleList.map(ob => cellKey(ob.x, ob.y)));
+    snake.slice(0, -1).forEach(seg => blocked.add(cellKey(seg.x, seg.y)));
+    blocked.delete(cellKey(start.x, start.y));
+    blocked.delete(cellKey(target.x, target.y));
+
+    const visited = new Set([cellKey(start.x, start.y)]);
+    const queue = [{ x: start.x, y: start.y }];
+    const directions = [
+      { x: 1, y: 0 },
+      { x: -1, y: 0 },
+      { x: 0, y: 1 },
+      { x: 0, y: -1 }
+    ];
+
+    while (queue.length) {
+      const current = queue.shift();
+      if (current.x === target.x && current.y === target.y) return true;
+
+      for (const dir of directions) {
+        let nx = current.x + dir.x;
+        let ny = current.y + dir.y;
+
+        if (allowWrap) {
+          if (nx < 0) nx = grid - 1;
+          if (nx >= grid) nx = 0;
+          if (ny < 0) ny = grid - 1;
+          if (ny >= grid) ny = 0;
+        } else if (nx < 0 || nx >= grid || ny < 0 || ny >= grid) {
+          continue;
+        }
+
+        const key = cellKey(nx, ny);
+        if (visited.has(key) || blocked.has(key)) continue;
+        visited.add(key);
+        queue.push({ x: nx, y: ny });
+      }
+    }
+
+    return false;
+  }
+
+  function countOpenNeighbors(x, y, obstacleList = obstacles, allowWrap = false) {
+    const grid = currentGridSize();
+    const blocked = new Set(obstacleList.map(ob => cellKey(ob.x, ob.y)));
+    snake.slice(0, -1).forEach(seg => blocked.add(cellKey(seg.x, seg.y)));
+
+    return [
+      { x: 1, y: 0 },
+      { x: -1, y: 0 },
+      { x: 0, y: 1 },
+      { x: 0, y: -1 }
+    ].reduce((count, dir) => {
+      let nx = x + dir.x;
+      let ny = y + dir.y;
+
+      if (allowWrap) {
+        if (nx < 0) nx = grid - 1;
+        if (nx >= grid) nx = 0;
+        if (ny < 0) ny = grid - 1;
+        if (ny >= grid) ny = 0;
+      } else if (nx < 0 || nx >= grid || ny < 0 || ny >= grid) {
+        return count;
+      }
+
+      return blocked.has(cellKey(nx, ny)) ? count : count + 1;
+    }, 0);
+  }
+
+  function randomEmptyCell(preferReachable = false) {
     const grid = currentGridSize();
     const options = [];
     for (let y = 0; y < grid; y++) {
@@ -224,20 +300,47 @@
         }
       }
     }
-    return options.length ? options[Math.floor(Math.random() * options.length)] : null;
+
+    const filtered = preferReachable && snake.length
+      ? options.filter(cell => countOpenNeighbors(cell.x, cell.y) >= 1 && canReachCell(snake[0], cell, obstacles, false))
+      : options;
+
+    const pool = filtered.length ? filtered : options;
+    return pool.length ? pool[Math.floor(Math.random() * pool.length)] : null;
   }
 
   function spawnFoodIfMissing() {
-    if (!boss?.active && !food) food = randomEmptyCell();
+    if (!boss?.active && !food) food = randomEmptyCell(true);
   }
 
   function ensureObstaclesForRound() {
+    const grid = currentGridSize();
     const target = obstacleTargetForState();
-    while (obstacles.length < target) {
+    const nextObstacles = [];
+    let attempts = 0;
+
+    while (nextObstacles.length < target && attempts < grid * grid * 6) {
       const pos = randomEmptyCell();
-      if (!pos) break;
-      obstacles.push(pos);
+      if (!pos || nextObstacles.some(ob => ob.x === pos.x && ob.y === pos.y)) {
+        attempts += 1;
+        continue;
+      }
+
+      const candidateObstacles = [...nextObstacles, pos];
+      const headSafe = !snake[0] || countOpenNeighbors(snake[0].x, snake[0].y, candidateObstacles, false) >= 1;
+      const foodSafe = !food || (
+        countOpenNeighbors(food.x, food.y, candidateObstacles, false) >= 1 &&
+        canReachCell(snake[0], food, candidateObstacles, false)
+      );
+
+      if (headSafe && foodSafe) {
+        nextObstacles.push(pos);
+      }
+
+      attempts += 1;
     }
+
+    obstacles = nextObstacles;
   }
 
   function spawnAngelEntities() {
@@ -302,10 +405,12 @@
       direction = { x: 1, y: 0 };
       nextDirection = { x: 1, y: 0 };
     }
-    ensureObstaclesForRound();
     if (!boss?.active) {
       spawnFoodIfMissing();
+      ensureObstaclesForRound();
       spawnAngelEntities();
+    } else {
+      ensureObstaclesForRound();
     }
   }
 
@@ -399,7 +504,7 @@
     if (levelCapEl) levelCapEl.textContent = String(currentMaxLevels());
     if (roundCapEl) roundCapEl.textContent = String(currentMaxRounds());
     if (healthEl) healthEl.textContent = `${playerHealth}/${maxHealth}`;
-    if (xpEl) xpEl.textContent = `${xp} • Lv ${xpLevel}`;
+    if (xpEl) xpEl.textContent = angelRealm ? `${xp} • Lv ${xpLevel}` : 'realm only';
     statusEl.textContent = tags.join(' + ');
   }
 
@@ -445,8 +550,9 @@
 
     if (round < maxRoundCount) {
       round += 1;
-      ensureObstaclesForRound();
+      obstacles = [];
       spawnFoodIfMissing();
+      ensureObstaclesForRound();
       spawnAngelEntities();
     } else if (level < maxLevelCount) {
       level += 1;
@@ -461,9 +567,9 @@
     } else if (angelRealm) {
       startBossFight();
     } else {
-      food = randomEmptyCell();
+      food = randomEmptyCell(true);
     }
-    gainXp(angelRealm ? 6 : 2);
+    gainXp(angelRealm ? 6 : 0);
     tickMs = getSpeedForState();
     updateHud();
   }
@@ -563,23 +669,31 @@
       const hitsBody = body.some(seg => seg.x === wrapped.x && seg.y === wrapped.y);
       if (!invincible && hitsBody) return null;
 
+      const routeDistance = invincible
+        ? portalDistanceScore(wrapped.x, wrapped.y, targetFood.x, targetFood.y)
+        : (canReachCell({ x: wrapped.x, y: wrapped.y }, targetFood, obstacles, false)
+          ? portalDistanceScore(wrapped.x, wrapped.y, targetFood.x, targetFood.y)
+          : Number.POSITIVE_INFINITY);
+
       return {
         dir,
         x: wrapped.x,
         y: wrapped.y,
         hazard: dangerScoreAtCell(wrapped.x, wrapped.y),
-        distance: portalDistanceScore(wrapped.x, wrapped.y, targetFood.x, targetFood.y)
+        distance: routeDistance,
+        exits: countOpenNeighbors(wrapped.x, wrapped.y, obstacles, invincible)
       };
     }).filter(Boolean);
 
     if (!evaluated.length) return;
 
-    const safeMoves = invincible ? evaluated : evaluated.filter(option => option.hazard === 0);
+    const safeMoves = invincible ? evaluated : evaluated.filter(option => option.hazard === 0 && Number.isFinite(option.distance));
     const candidates = safeMoves.length ? safeMoves : evaluated;
 
     candidates.sort((a, b) => {
       if (!invincible && a.hazard !== b.hazard) return a.hazard - b.hazard;
       if (a.distance !== b.distance) return a.distance - b.distance;
+      if (a.exits !== b.exits) return b.exits - a.exits;
 
       const aStraight = a.dir.x === direction.x && a.dir.y === direction.y ? 0 : 1;
       const bStraight = b.dir.x === direction.x && b.dir.y === direction.y ? 0 : 1;
@@ -669,7 +783,7 @@
       const targetY = Math.max(0, Math.min(currentGridSize() - 1, snake[0].y + direction.y * 2));
 
       angels.forEach(enemy => {
-        moveEnemyWander(enemy, 4);
+        moveEnemyWander(enemy, 6);
         if (now - enemy.lastShotAt >= 5000) {
           fireProjectile(enemy.x, enemy.y, targetX, targetY, 0.34, 1, 'rgba(255,242,166,0.95)');
           enemy.lastShotAt = now;
@@ -677,7 +791,7 @@
       });
 
       generalAngels.forEach(enemy => {
-        moveEnemyWander(enemy, 3);
+        moveEnemyWander(enemy, 5);
         if (now - enemy.lastShotAt >= 2000) {
           fireProjectile(enemy.x, enemy.y, targetX, targetY, 0.42, 1, 'rgba(255,255,255,0.95)');
           enemy.lastShotAt = now;
@@ -864,13 +978,15 @@
     }
 
     if (obstacleIndex !== -1) {
+      obstacles.splice(obstacleIndex, 1);
       if (invincible) {
-        obstacles.splice(obstacleIndex, 1);
         score += 3;
       } else {
-        gameOver = true;
-        updateHud();
-        return;
+        applyDamage(3, newHead.x, newHead.y);
+        if (gameOver) {
+          updateHud();
+          return;
+        }
       }
     }
 
@@ -903,6 +1019,12 @@
       if (boss.hp <= 0) {
         boss = null;
         angelRealm = false;
+        projectiles = [];
+        trackingLasers = [];
+        skyBeams = [];
+        grenades = [];
+        altar = null;
+        healOrb = null;
         showRealmMessage('Arch Angle defeated!', 2600);
       }
     }
@@ -1027,7 +1149,7 @@
 
   function drawAngelEnemy(enemy, type = 'angel', now = performance.now()) {
     const size = currentCellSize();
-    const bodySize = size - 10;
+    const bodySize = size - 6;
     const px = enemy.x * size + 5;
     const py = enemy.y * size + 5;
     const bodyColor = type === 'general' ? '#fffdf5' : '#ffe06a';
@@ -1289,7 +1411,7 @@
       grenades.forEach(grenade => {
         const size = currentCellSize();
         const alpha = grenade.exploding > 0 ? 0.34 : 0.16 + Math.sin(now * 0.02) * 0.05;
-        ctx.fillStyle = `rgba(255, 235, 160, ${alpha})`;
+        ctx.fillStyle = `rgba(255, 70, 70, ${alpha})`;
         ctx.fillRect((grenade.x - 1) * size, (grenade.y - 1) * size, size * 3, size * 3);
       });
 
