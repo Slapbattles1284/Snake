@@ -66,6 +66,8 @@
   let altar = null;
   let boss = null;
   let particles = [];
+  let trackingLasers = [];
+  let skyBeams = [];
   let jackpotMode = false;
   let realmMessage = '';
   let realmMessageUntil = 0;
@@ -266,6 +268,8 @@
     generalAngels = [];
     projectiles = [];
     grenades = [];
+    trackingLasers = [];
+    skyBeams = [];
     healOrb = null;
     food = null;
     boss = {
@@ -275,9 +279,12 @@
       x: Math.max(2, Math.floor(currentGridSize() / 2)),
       y: 1,
       dir: 1,
+      floatSeed: Math.random() * Math.PI * 2,
       lastVolleyAt: 0,
       lastGrenadeAt: 0,
       lastAltarAt: 0,
+      lastLaserAt: 0,
+      lastBeamAt: 0,
       active: true
     };
     altar = randomEmptyCell();
@@ -326,6 +333,8 @@
     altar = null;
     boss = null;
     particles = [];
+    trackingLasers = [];
+    skyBeams = [];
     recalcStats();
     playerHealth = maxHealth;
     setupLevel(true);
@@ -346,6 +355,8 @@
     directionQueue = [];
     projectiles = [];
     grenades = [];
+    trackingLasers = [];
+    skyBeams = [];
     playerHealth = Math.max(1, Math.ceil(maxHealth * 0.6));
     scheduleTongue();
     updateHud();
@@ -465,6 +476,64 @@
     );
   }
 
+  function wrapPositionForPortal(x, y) {
+    const grid = currentGridSize();
+    let wrappedX = x;
+    let wrappedY = y;
+
+    if (wrappedX < 0) wrappedX = grid - 1;
+    if (wrappedX >= grid) wrappedX = 0;
+    if (wrappedY < 0) wrappedY = grid - 1;
+    if (wrappedY >= grid) wrappedY = 0;
+
+    return { x: wrappedX, y: wrappedY };
+  }
+
+  function portalDistanceScore(fromX, fromY, toX, toY) {
+    const grid = currentGridSize();
+    const dx = Math.abs(fromX - toX);
+    const dy = Math.abs(fromY - toY);
+
+    if (invincible) {
+      return Math.min(dx, grid - dx) + Math.min(dy, grid - dy);
+    }
+
+    return dx + dy;
+  }
+
+  function dangerScoreAtCell(x, y) {
+    if (invincible) return 0;
+
+    let score = 0;
+    const centerX = x + 0.5;
+    const centerY = y + 0.5;
+
+    projectiles.forEach(projectile => {
+      const dist = Math.hypot(projectile.x - centerX, projectile.y - centerY);
+      if (dist < 0.75) score += projectile.persist ? 140 : 90;
+    });
+
+    trackingLasers.forEach(laser => {
+      const dist = Math.hypot(laser.x - centerX, laser.y - centerY);
+      if (dist < 0.85) score += 180;
+    });
+
+    skyBeams.forEach(beam => {
+      if (beam.x === x) score += beam.warning > 0 ? 40 : 220;
+    });
+
+    grenades.forEach(grenade => {
+      const inBlast = Math.abs(grenade.x - x) <= grenade.radius && Math.abs(grenade.y - y) <= grenade.radius;
+      const nearBlast = Math.abs(grenade.x - x) <= grenade.radius + 1 && Math.abs(grenade.y - y) <= grenade.radius + 1;
+
+      if (grenade.exploding > 0 && inBlast) score += 220;
+      else if (grenade.timer <= 2 && nearBlast) score += 140;
+      else if (grenade.timer <= 5 && nearBlast) score += 45;
+    });
+
+    return score;
+  }
+
   function chooseAutoDirection() {
     if (!autoAim || (!food && !altar) || !snake.length) return;
 
@@ -478,30 +547,49 @@
     ];
 
     const grid = currentGridSize();
-    const valid = options.filter(dir => {
-      if (direction.x === -dir.x && direction.y === -dir.y && snake.length > 1) return false;
-      const nx = head.x + dir.x;
-      const ny = head.y + dir.y;
-      if (nx < 0 || nx >= grid || ny < 0 || ny >= grid) return invincible;
-      const hitsObstacle = obstacles.some(ob => ob.x === nx && ob.y === ny);
-      if (!invincible && hitsObstacle) return false;
+    const evaluated = options.map(dir => {
+      if (direction.x === -dir.x && direction.y === -dir.y && snake.length > 1) return null;
+
+      const rawX = head.x + dir.x;
+      const rawY = head.y + dir.y;
+
+      if ((rawX < 0 || rawX >= grid || rawY < 0 || rawY >= grid) && !invincible) return null;
+
+      const wrapped = wrapPositionForPortal(rawX, rawY);
+      const hitsObstacle = obstacles.some(ob => ob.x === wrapped.x && ob.y === wrapped.y);
+      if (!invincible && hitsObstacle) return null;
+
       const body = snake.slice(0, -1);
-      const hitsBody = body.some(seg => seg.x === nx && seg.y === ny);
-      return invincible || !hitsBody;
+      const hitsBody = body.some(seg => seg.x === wrapped.x && seg.y === wrapped.y);
+      if (!invincible && hitsBody) return null;
+
+      return {
+        dir,
+        x: wrapped.x,
+        y: wrapped.y,
+        hazard: dangerScoreAtCell(wrapped.x, wrapped.y),
+        distance: portalDistanceScore(wrapped.x, wrapped.y, targetFood.x, targetFood.y)
+      };
+    }).filter(Boolean);
+
+    if (!evaluated.length) return;
+
+    const safeMoves = invincible ? evaluated : evaluated.filter(option => option.hazard === 0);
+    const candidates = safeMoves.length ? safeMoves : evaluated;
+
+    candidates.sort((a, b) => {
+      if (!invincible && a.hazard !== b.hazard) return a.hazard - b.hazard;
+      if (a.distance !== b.distance) return a.distance - b.distance;
+
+      const aStraight = a.dir.x === direction.x && a.dir.y === direction.y ? 0 : 1;
+      const bStraight = b.dir.x === direction.x && b.dir.y === direction.y ? 0 : 1;
+      return aStraight - bStraight;
     });
 
-    if (!valid.length) return;
-
-    valid.sort((a, b) => {
-      const da = Math.abs(head.x + a.x - targetFood.x) + Math.abs(head.y + a.y - targetFood.y);
-      const db = Math.abs(head.x + b.x - targetFood.x) + Math.abs(head.y + b.y - targetFood.y);
-      return da - db;
-    });
-
-    nextDirection = valid[0];
+    nextDirection = candidates[0].dir;
   }
 
-  function fireProjectile(fromX, fromY, targetX, targetY, speed = 0.35, damage = 1, color = 'rgba(255,248,180,0.95)') {
+  function fireProjectile(fromX, fromY, targetX, targetY, speed = 0.35, damage = 1, color = 'rgba(255,248,180,0.95)', persist = false) {
     const dx = targetX + 0.5 - (fromX + 0.5);
     const dy = targetY + 0.5 - (fromY + 0.5);
     const length = Math.hypot(dx, dy) || 1;
@@ -511,9 +599,35 @@
       vx: (dx / length) * speed,
       vy: (dy / length) * speed,
       damage,
-      life: 42,
+      life: persist ? 9999 : 42,
+      cooldown: 0,
+      persist,
       color
     });
+    if (projectiles.length > 160) projectiles.shift();
+  }
+
+  function spawnTrackingLaser(originX, originY) {
+    trackingLasers.push({
+      x: originX + 0.5,
+      y: originY + 0.5,
+      vx: 0,
+      vy: 0,
+      life: 180,
+      cooldown: 0
+    });
+    if (trackingLasers.length > 16) trackingLasers.shift();
+  }
+
+  function spawnSkyBeam(columnX, damage = 1) {
+    skyBeams.push({
+      x: Math.max(0, Math.min(currentGridSize() - 1, Math.round(columnX))),
+      warning: 20,
+      active: 10,
+      damage,
+      hitDone: false
+    });
+    if (skyBeams.length > 18) skyBeams.shift();
   }
 
   function moveEnemyWander(enemy, pace = 4) {
@@ -575,23 +689,40 @@
       });
 
       if (boss?.active) {
-        boss.x += boss.dir * 0.18;
+        boss.x += boss.dir * 0.12;
         if (boss.x <= 2 || boss.x >= currentGridSize() - 3) boss.dir *= -1;
-        if (now - boss.lastVolleyAt >= 1600) {
-          const volleyCount = randomBetween(3, 9);
+
+        if (now - boss.lastVolleyAt >= 1400) {
+          const volleyCount = randomBetween(4, 9);
           for (let i = 0; i < volleyCount; i++) {
-            fireProjectile(boss.x + (i % 3) - 1, boss.y + 1, targetX + randomBetween(-1, 1), targetY + randomBetween(-1, 1), 0.36, 1, 'rgba(255,236,120,0.95)');
+            fireProjectile(boss.x + (i % 3) - 1, boss.y + 1, targetX + randomBetween(-3, 3), targetY + randomBetween(-2, 2), 0.32, 1, 'rgba(255,236,120,0.95)', true);
           }
           boss.lastVolleyAt = now;
         }
-        if (now - boss.lastGrenadeAt >= 3200) {
+
+        if (now - boss.lastLaserAt >= 2600) {
+          spawnTrackingLaser(boss.x, boss.y + 1);
+          if (Math.random() < 0.5) spawnTrackingLaser(boss.x + randomBetween(-1, 1), boss.y + 1);
+          boss.lastLaserAt = now;
+        }
+
+        if (now - boss.lastBeamAt >= 2200) {
+          const beamCount = randomBetween(1, 3);
+          for (let i = 0; i < beamCount; i++) {
+            spawnSkyBeam(targetX + randomBetween(-2, 2), 1);
+          }
+          boss.lastBeamAt = now;
+        }
+
+        if (now - boss.lastGrenadeAt >= 2800) {
           const grenadeCount = randomBetween(1, 5);
           for (let i = 0; i < grenadeCount; i++) {
             grenades.push({ x: Math.max(1, Math.min(currentGridSize() - 2, targetX + randomBetween(-2, 2))), y: Math.max(1, Math.min(currentGridSize() - 2, targetY + randomBetween(-2, 2))), timer: Math.max(10, Math.round(5000 / Math.max(40, tickMs))), damage: 2, radius: 1, exploding: 0 });
           }
           boss.lastGrenadeAt = now;
         }
-        if ((!altar || altar.destroyed) && now - boss.lastAltarAt >= 5000) {
+
+        if (!altar && now - boss.lastAltarAt >= 2200) {
           altar = randomEmptyCell();
           boss.lastAltarAt = now;
         }
@@ -599,15 +730,68 @@
     }
 
     projectiles = projectiles.filter(projectile => {
+      const grid = currentGridSize();
       projectile.x += projectile.vx;
       projectile.y += projectile.vy;
-      projectile.life -= 1;
-      const hit = vulnerable.find(seg => seg.x === Math.floor(projectile.x) && seg.y === Math.floor(projectile.y));
+      if (projectile.cooldown > 0) projectile.cooldown -= 1;
+      if (!projectile.persist) projectile.life -= 1;
+
+      if (projectile.persist) {
+        if (projectile.x < 0) projectile.x += grid;
+        if (projectile.y < 0) projectile.y += grid;
+        if (projectile.x >= grid) projectile.x -= grid;
+        if (projectile.y >= grid) projectile.y -= grid;
+      }
+
+      const hit = projectile.cooldown <= 0 && vulnerable.find(seg => seg.x === Math.floor(projectile.x) && seg.y === Math.floor(projectile.y));
       if (hit) {
         applyDamage(projectile.damage, hit.x, hit.y);
-        return false;
+        projectile.cooldown = 8;
+        if (!projectile.persist) return false;
       }
-      return projectile.life > 0 && projectile.x >= -1 && projectile.y >= -1 && projectile.x <= currentGridSize() + 1 && projectile.y <= currentGridSize() + 1;
+      return projectile.persist || (projectile.life > 0 && projectile.x >= -1 && projectile.y >= -1 && projectile.x <= grid + 1 && projectile.y <= grid + 1);
+    });
+
+    trackingLasers = trackingLasers.filter(laser => {
+      const grid = currentGridSize();
+      const dx = snake[0].x + 0.5 - laser.x;
+      const dy = snake[0].y + 0.5 - laser.y;
+      const len = Math.hypot(dx, dy) || 1;
+      laser.vx = laser.vx * 0.9 + (dx / len) * 0.04;
+      laser.vy = laser.vy * 0.9 + (dy / len) * 0.04;
+      laser.x += laser.vx;
+      laser.y += laser.vy;
+      laser.life -= 1;
+      if (laser.cooldown > 0) laser.cooldown -= 1;
+
+      if (laser.x < 0) laser.x += grid;
+      if (laser.y < 0) laser.y += grid;
+      if (laser.x >= grid) laser.x -= grid;
+      if (laser.y >= grid) laser.y -= grid;
+
+      const hit = laser.cooldown <= 0 && vulnerable.find(seg => Math.abs(seg.x + 0.5 - laser.x) < 0.45 && Math.abs(seg.y + 0.5 - laser.y) < 0.45);
+      if (hit) {
+        applyDamage(1, hit.x, hit.y);
+        laser.cooldown = 10;
+      }
+      return laser.life > 0;
+    });
+
+    skyBeams = skyBeams.filter(beam => {
+      if (beam.warning > 0) {
+        beam.warning -= 1;
+        return true;
+      }
+
+      if (!beam.hitDone) {
+        const hit = vulnerable.some(seg => seg.x === beam.x || Math.abs(seg.x - beam.x) <= 0);
+        if (hit) applyDamage(beam.damage, beam.x, snake[0].y);
+        emitParticles(beam.x, Math.floor(currentGridSize() / 2), 18, ['rgba(255,255,255,0.98)', 'rgba(255,232,130,0.95)']);
+        beam.hitDone = true;
+      }
+
+      beam.active -= 1;
+      return beam.active > 0;
     });
 
     grenades = grenades.filter(grenade => {
@@ -888,6 +1072,66 @@
     ctx.stroke();
   }
 
+  function drawBossAvatar(now = performance.now()) {
+    if (!boss?.active) return;
+
+    const floatX = canvas.width / 2 + Math.sin(now * 0.0018 + boss.floatSeed) * 110;
+    const floatY = 84 + Math.sin(now * 0.003 + boss.floatSeed) * 10;
+    const wingLift = Math.sin(now * 0.01) * 10;
+
+    ctx.save();
+    ctx.translate(floatX, floatY);
+
+    ctx.fillStyle = 'rgba(255,255,255,0.2)';
+    ctx.beginPath();
+    ctx.ellipse(0, -54, 34, 9, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#ffe28a';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    ctx.beginPath();
+    ctx.moveTo(-70, -6);
+    ctx.quadraticCurveTo(-112, -38 - wingLift, -88, 28);
+    ctx.quadraticCurveTo(-62, 10, -34, 0);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(70, -6);
+    ctx.quadraticCurveTo(112, -38 - wingLift, 88, 28);
+    ctx.quadraticCurveTo(62, 10, 34, 0);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.fillStyle = '#fff6cf';
+    roundedRectPath(-28, -28, 56, 56, 12);
+    ctx.fill();
+    ctx.strokeStyle = '#d8b24b';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    ctx.fillStyle = '#2d2411';
+    ctx.fillRect(-12, -10, 6, 6);
+    ctx.fillRect(6, -10, 6, 6);
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(-10, 12);
+    ctx.lineTo(10, 12);
+    ctx.stroke();
+
+    ctx.fillStyle = '#ffd54f';
+    ctx.beginPath();
+    ctx.moveTo(-24, 26);
+    ctx.lineTo(0, 62);
+    ctx.lineTo(24, 26);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.restore();
+  }
+
   function levelColors() {
     if (angelRealm) {
       return {
@@ -1014,11 +1258,31 @@
         drawHead(snake[0], now, snake[0].x, snake[0].y);
       }
 
+      skyBeams.forEach(beam => {
+        const size = currentCellSize();
+        ctx.fillStyle = beam.warning > 0 ? 'rgba(255,255,255,0.15)' : 'rgba(255,236,130,0.32)';
+        ctx.fillRect(beam.x * size, 0, size, canvas.height);
+      });
+
       projectiles.forEach(projectile => {
         const size = currentCellSize();
         ctx.fillStyle = projectile.color;
         ctx.beginPath();
         ctx.arc(projectile.x * size, projectile.y * size, Math.max(3, size * 0.12), 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      trackingLasers.forEach(laser => {
+        const size = currentCellSize();
+        ctx.strokeStyle = 'rgba(255,248,180,0.85)';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo((laser.x - laser.vx * 4) * size, (laser.y - laser.vy * 4) * size);
+        ctx.lineTo(laser.x * size, laser.y * size);
+        ctx.stroke();
+        ctx.fillStyle = '#fff3b0';
+        ctx.beginPath();
+        ctx.arc(laser.x * size, laser.y * size, Math.max(4, size * 0.14), 0, Math.PI * 2);
         ctx.fill();
       });
 
@@ -1033,10 +1297,7 @@
       activePortals.forEach(portal => drawPortal(portal, now));
 
       if (boss?.active) {
-        drawRoundedCell(boss.x - 1, boss.y, '#fff7bf', 10, 1, 'rgba(255,247,191,0.25)');
-        drawRoundedCell(boss.x, boss.y, '#ffd54f', 10, 1, 'rgba(255,213,79,0.25)');
-        drawRoundedCell(boss.x + 1, boss.y, '#fff7bf', 10, 1, 'rgba(255,247,191,0.25)');
-
+        drawBossAvatar(now);
         ctx.fillStyle = 'rgba(0,0,0,0.5)';
         ctx.fillRect(16, 12, canvas.width - 32, 16);
         ctx.fillStyle = '#ffd54f';
@@ -1138,6 +1399,49 @@
       playerHealth = maxHealth;
       showRealmMessage('Jackpot skin unlocked', 1800);
       updateHud();
+    }
+    if (endsWithSequence(['h', 'e', 'a', 'l'])) {
+      playerHealth = maxHealth;
+      showRealmMessage('Full heal', 1200);
+      updateHud();
+    }
+    if (endsWithSequence(['c', 'l', 'e', 'a', 'r'])) {
+      obstacles = [];
+      grenades = [];
+      projectiles = [];
+      trackingLasers = [];
+      skyBeams = [];
+      showRealmMessage('Arena cleared', 1200);
+      updateHud();
+    }
+    if (endsWithSequence(['s', 'm', 'i', 't', 'e'])) {
+      const removed = angels.length + generalAngels.length;
+      angels = [];
+      generalAngels = [];
+      score += removed * 12;
+      gainXp(removed * 8);
+      emitParticles(snake[0].x, snake[0].y, 18, ['rgba(255,255,255,0.98)', 'rgba(255,236,120,0.95)']);
+      showRealmMessage('Smite!', 1200);
+      updateHud();
+    }
+    if (endsWithSequence(['h', 'a', 'l', 'o'])) {
+      abilities.vigor += 1;
+      abilities.reflex += 1;
+      recalcStats();
+      playerHealth = maxHealth;
+      tickMs = getSpeedForState();
+      showRealmMessage('Halo blessing', 1400);
+      updateHud();
+    }
+    if (endsWithSequence(['b', 'l', 'e', 's', 's'])) {
+      healOrb = randomEmptyCell();
+      gainXp(15);
+      showRealmMessage('Blessing dropped', 1400);
+      updateHud();
+    }
+    if (endsWithSequence(['n', 'e', 'x', 't'])) {
+      advanceProgress();
+      showRealmMessage('Round skipped', 1200);
     }
 
     scheduleSpeedCommandParse();
