@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Snake 7x7</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="card-wrap">
+    <section class="card game-card" id="gamePage">
+      <div class="card-header">
+        <p class="eyebrow">SNAKE</p>
+        <h1>7x7 snake game</h1>
+        <p class="subtext">Use arrow keys or WASD. Press <code>R</code> to revive after a crash. Survive 15 levels with 30 rounds each.</p>
+      </div>
+
+      <div class="hud">
+        <div><strong>Level:</strong> <span id="level">1</span>/<span id="levelCap">15</span></div>
+        <div><strong>Round:</strong> <span id="round">1</span>/<span id="roundCap">30</span></div>
+        <div><strong>Score:</strong> <span id="score">0</span></div>
+        <div><strong>Health:</strong> <span id="health">10/10</span></div>
+        <div><strong>XP:</strong> <span id="xp">0</span></div>
+        <div><strong>Status:</strong> <span id="status">playing</span></div>
+      </div>
+
+      <div class="game-panel">
+        <canvas id="game" width="560" height="560" aria-label="7 by 7 snake game"></canvas>
+      </div>
+
+      <div class="controls">
+        <button id="restartBtn" type="button">Restart</button>
+      </div>
+
+      <p class="hint">There are hidden cheat codes in here somewhere.</p>
+    </section>
+
+    <section class="card cheat-card hidden" id="cheatPage">
+      <div class="card-header">
+        <p class="eyebrow">SECRET</p>
+        <h1>cheat room</h1>
+        <p class="subtext">You found the hidden page with all the cheat codes.</p>
+      </div>
+
+      <ul class="cheat-list">
+        <li><code>god</code> — become invincible to obstacles and self-collisions.</li>
+        <li><code>zoom</code> — a speed cheat that can be strengthened further.</li>
+        <li><code>unzoom</code> — slows the snake down.</li>
+        <li><code>food</code> — fill the world with apples.</li>
+        <li><code>aimbot</code> (or <code>aim</code>) — auto-pilot the snake toward apples while dodging danger.</li>
+      </ul>
+
+      <div class="controls">
+        <button id="backBtn" type="button">Back to game</button>
+      </div>
+    </section>
+  </main>
+  <script src="script.js"></script>
+</body>
+</html>

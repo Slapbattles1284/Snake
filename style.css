@@ -1,0 +1,84 @@
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{
+  font-family:Inter,system-ui,-apple-system,'Segoe UI',Roboto,Arial,Helvetica,sans-serif;
+  background:
+    radial-gradient(circle at top, rgba(255,245,210,0.55), transparent 32%),
+    linear-gradient(180deg, #ffb36b 0%, #ff8b6a 38%, #8c4db8 72%, #1f244f 100%);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:24px;
+}
+.card-wrap{width:min(100%, 980px)}
+.card{
+  background:#fff;
+  color:#111;
+  border-radius:24px;
+  padding:26px;
+  box-shadow:0 24px 60px rgba(18, 10, 40, 0.28);
+}
+.hidden{display:none}
+.card-header{margin-bottom:14px}
+.eyebrow{
+  margin:0 0 6px;
+  font-size:12px;
+  font-weight:800;
+  letter-spacing:0.24em;
+  color:#444;
+}
+h1{margin:0;font-size:clamp(24px,4vw,34px);line-height:1.1}
+.subtext,.hint{margin:8px 0 0;color:#444;line-height:1.4}
+.hud{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:10px;
+  margin:16px 0;
+}
+@media (max-width: 720px){
+  .hud{grid-template-columns:repeat(2,1fr)}
+}
+.hud > div{
+  background:#f4f4f7;
+  border-radius:12px;
+  padding:10px 12px;
+  font-size:14px;
+}
+.game-panel{
+  background:#050505;
+  border-radius:18px;
+  padding:22px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+#game{
+  width:560px;
+  height:560px;
+  display:block;
+  border-radius:12px;
+  background:#111;
+  max-width:100%;
+}
+.controls{margin-top:14px}
+button{
+  appearance:none;
+  border:none;
+  border-radius:10px;
+  background:#111;
+  color:#fff;
+  padding:10px 14px;
+  font-weight:700;
+  cursor:pointer;
+}
+.cheat-list{
+  margin:16px 0 0;
+  padding-left:20px;
+  line-height:1.8;
+}
+code{
+  background:#111;
+  color:#fff;
+  border-radius:6px;
+  padding:2px 6px;
+}
