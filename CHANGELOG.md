@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented here.
 
+## [0.0.4] - 2026-03-31
+
+### Added
+- Home screen with `Normal play`, `Endless`, `Change name`, and `Shop — coming soon`
+- Player-name display above the snake during gameplay
+- Visible Jackpot skin colors, coin/energy trail, and slot-style bonus HUD
+
 ## [0.0.3] - 2026-03-31
 
 ### Changed

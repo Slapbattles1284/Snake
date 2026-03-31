@@ -60,7 +60,16 @@ h1{margin:0;font-size:clamp(24px,4vw,34px);line-height:1.1}
   background:#111;
   max-width:100%;
 }
-.controls{margin-top:14px}
+.menu-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px;
+  margin-top:16px;
+}
+@media (max-width: 720px){
+  .menu-grid{grid-template-columns:1fr}
+}
+.controls{margin-top:14px;display:flex;gap:10px;flex-wrap:wrap}
 button{
   appearance:none;
   border:none;
@@ -70,6 +79,10 @@ button{
   padding:10px 14px;
   font-weight:700;
   cursor:pointer;
+}
+button[disabled]{
+  opacity:0.55;
+  cursor:not-allowed;
 }
 .cheat-list{
   margin:16px 0 0;

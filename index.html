@@ -3,15 +3,32 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Snake 7x7</title>
+  <title>snake</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <main class="card-wrap">
-    <section class="card game-card" id="gamePage">
+    <section class="card home-card" id="homePage">
+      <div class="card-header">
+        <p class="eyebrow">HOME</p>
+        <h1>snake</h1>
+        <p class="subtext">Pick a mode, set your name, and jump in.</p>
+      </div>
+
+      <div class="menu-grid">
+        <button id="playNormalBtn" type="button">Normal play</button>
+        <button id="playEndlessBtn" type="button">Endless</button>
+        <button id="changeNameBtn" type="button">Change name</button>
+        <button id="shopBtn" type="button" disabled>Shop — coming soon</button>
+      </div>
+
+      <p class="hint">Player name: <strong id="playerNameLabel">Player</strong></p>
+    </section>
+
+    <section class="card game-card hidden" id="gamePage">
       <div class="card-header">
         <p class="eyebrow">SNAKE</p>
-        <h1>7x7 snake game</h1>
+        <h1>snake</h1>
         <p class="subtext">Use arrow keys or WASD. Press <code>R</code> to revive after a crash. Survive 15 levels with 30 rounds each.</p>
       </div>
 
@@ -29,6 +46,7 @@
       </div>
 
       <div class="controls">
+        <button id="homeBtn" type="button">Home</button>
         <button id="restartBtn" type="button">Restart</button>
       </div>
 
@@ -47,7 +65,9 @@
         <li><code>zoom</code> — a speed cheat that can be strengthened further.</li>
         <li><code>unzoom</code> — slows the snake down.</li>
         <li><code>food</code> — fill the world with apples.</li>
-        <li><code>aimbot</code> (or <code>aim</code>) — auto-pilot the snake toward apples while dodging danger.</li>
+        <li><code>aim</code> / <code>aimbot</code> — auto-pilot toward apples while dodging danger.</li>
+        <li><code>jackpot</code> — unlock the Jackpot skin and slot bonus UI.</li>
+        <li><code>heal</code>, <code>clear</code>, <code>smite</code>, <code>halo</code>, <code>bless</code>, <code>next</code></li>
       </ul>
 
       <div class="controls">

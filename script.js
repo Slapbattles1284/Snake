@@ -15,7 +15,13 @@
   const xpEl = document.getElementById('xp');
   const statusEl = document.getElementById('status');
   const restartBtn = document.getElementById('restartBtn');
+  const homeBtn = document.getElementById('homeBtn');
   const backBtn = document.getElementById('backBtn');
+  const playNormalBtn = document.getElementById('playNormalBtn');
+  const playEndlessBtn = document.getElementById('playEndlessBtn');
+  const changeNameBtn = document.getElementById('changeNameBtn');
+  const playerNameLabel = document.getElementById('playerNameLabel');
+  const homePage = document.getElementById('homePage');
   const gamePage = document.getElementById('gamePage');
   const cheatPage = document.getElementById('cheatPage');
 
@@ -71,6 +77,17 @@
   let jackpotMode = false;
   let realmMessage = '';
   let realmMessageUntil = 0;
+  let currentScreen = 'home';
+  let endlessMode = false;
+  let playerName = 'Player';
+  let jackpotHud = { mode: 'XP', nextRollAt: 0 };
+
+  try {
+    const savedName = localStorage.getItem('snakePlayerName');
+    if (savedName) playerName = savedName;
+  } catch {
+    // ignore storage errors
+  }
 
   function currentGridSize() {
     return baseGridSize + (level - 1);
@@ -118,8 +135,10 @@
 
   function updateView() {
     const inCheatRoom = window.location.hash === '#cheats';
-    gamePage.classList.toggle('hidden', inCheatRoom);
-    cheatPage.classList.toggle('hidden', !inCheatRoom);
+    if (playerNameLabel) playerNameLabel.textContent = playerName;
+    if (homePage) homePage.classList.toggle('hidden', currentScreen !== 'home');
+    gamePage.classList.toggle('hidden', currentScreen !== 'game' || inCheatRoom);
+    cheatPage.classList.toggle('hidden', currentScreen !== 'game' || !inCheatRoom);
   }
 
   function currentMaxRounds() {
@@ -127,7 +146,37 @@
   }
 
   function currentMaxLevels() {
+    if (endlessMode && !angelRealm) return Number.POSITIVE_INFINITY;
     return angelRealm ? angelMaxLevels : maxLevels;
+  }
+
+  function startMode(mode = 'normal') {
+    endlessMode = mode === 'endless';
+    currentScreen = 'game';
+    window.location.hash = '';
+    resetGame();
+    showRealmMessage(endlessMode ? 'Endless mode' : 'Normal mode', 1200);
+    updateView();
+  }
+
+  function returnHome() {
+    currentScreen = 'home';
+    window.location.hash = '';
+    updateView();
+  }
+
+  function changePlayerName() {
+    const entered = window.prompt('Enter your name', playerName);
+    if (entered === null) return;
+
+    const cleaned = entered.trim().slice(0, 18) || 'Player';
+    playerName = cleaned;
+    try {
+      localStorage.setItem('snakePlayerName', playerName);
+    } catch {
+      // ignore storage errors
+    }
+    updateView();
   }
 
   function showRealmMessage(message, duration = 1600) {
@@ -141,8 +190,8 @@
   }
 
   function gainXp(amount) {
-    if (amount <= 0) return;
-    const earned = jackpotMode && Math.random() < 0.5 ? Math.ceil(amount * 1.5) : amount;
+    if (amount <= 0 || !angelRealm) return;
+    const earned = jackpotMode && jackpotHud.mode === '%XP' ? Math.ceil(amount * 1.5) : amount;
     xp += earned;
     while (xp >= xpLevel * 25) {
       xp -= xpLevel * 25;
@@ -186,6 +235,7 @@
   }
 
   function enterAngelRealm() {
+    currentScreen = 'game';
     angelRealm = true;
     xp = 0;
     xpLevel = 1;
@@ -194,6 +244,7 @@
     playerHealth = maxHealth;
     showRealmMessage('Angel Realm awakened', 2200);
     resetGame();
+    updateView();
   }
 
   function getSpeedForState() {
@@ -501,7 +552,7 @@
     levelEl.textContent = String(level);
     roundEl.textContent = String(round);
     scoreEl.textContent = String(score);
-    if (levelCapEl) levelCapEl.textContent = String(currentMaxLevels());
+    if (levelCapEl) levelCapEl.textContent = Number.isFinite(currentMaxLevels()) ? String(currentMaxLevels()) : '∞';
     if (roundCapEl) roundCapEl.textContent = String(currentMaxRounds());
     if (healthEl) healthEl.textContent = `${playerHealth}/${maxHealth}`;
     if (xpEl) xpEl.textContent = angelRealm ? `${xp} • Lv ${xpLevel}` : 'realm only';
@@ -1079,7 +1130,7 @@
     const offset = ((size - 8) - bodySize) / 2;
     const px = drawX * size + 4 + offset;
     const py = drawY * size + 4 + offset;
-    const headColor = invincible ? '#ffd84d' : '#5ef38c';
+    const headColor = jackpotMode ? '#ffd54f' : (invincible ? '#ffd84d' : '#5ef38c');
 
     ctx.fillStyle = headColor;
     roundedRectPath(px, py, bodySize, bodySize, 10);
@@ -1372,12 +1423,29 @@
       generalAngels.forEach(enemy => drawAngelEnemy(enemy, 'general', now));
 
       if (snake.length) {
+        const bodyColor = jackpotMode ? '#9c4dff' : '#2bc866';
         snake.slice(1).forEach((seg, index) => {
           const scale = 0.97 + Math.sin(now * 0.008 + index * 0.45) * 0.02;
-          drawRoundedCell(seg.x, seg.y, '#2bc866', 8, scale, null);
+          drawRoundedCell(seg.x, seg.y, bodyColor, 8, scale, null);
         });
 
         drawHead(snake[0], now, snake[0].x, snake[0].y);
+
+        const size = currentCellSize();
+        ctx.fillStyle = jackpotMode ? '#fff4b2' : '#ffffff';
+        ctx.font = 'bold 12px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(playerName, snake[0].x * size + size / 2, Math.max(12, snake[0].y * size - 6));
+
+        if (jackpotMode) {
+          if (now >= jackpotHud.nextRollAt) {
+            jackpotHud.mode = Math.random() < 0.5 ? 'XP' : '%XP';
+            jackpotHud.nextRollAt = now + 5000;
+          }
+          if (Math.random() < 0.18) {
+            emitParticles(snake[snake.length - 1].x, snake[snake.length - 1].y, 2, ['rgba(255,215,0,0.95)', 'rgba(255,255,255,0.92)', 'rgba(156,77,255,0.88)']);
+          }
+        }
       }
 
       skyBeams.forEach(beam => {
@@ -1428,6 +1496,20 @@
         ctx.font = 'bold 12px Arial';
         ctx.textAlign = 'center';
         ctx.fillText(`${boss.name} ${boss.hp}/${boss.maxHp}`, canvas.width / 2, 24);
+      }
+
+      if (jackpotMode) {
+        ctx.fillStyle = 'rgba(52, 18, 76, 0.86)';
+        ctx.fillRect(canvas.width - 128, 38, 112, 44);
+        ctx.strokeStyle = '#ffd54f';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(canvas.width - 128, 38, 112, 44);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 11px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('JACKPOT', canvas.width - 72, 54);
+        ctx.fillStyle = '#ffd54f';
+        ctx.fillText(jackpotHud.mode, canvas.width - 72, 70);
       }
 
       particles = particles.filter(particle => {
@@ -1593,6 +1675,10 @@
     updateView();
   });
   restartBtn.addEventListener('click', resetGame);
+  if (homeBtn) homeBtn.addEventListener('click', returnHome);
+  if (playNormalBtn) playNormalBtn.addEventListener('click', () => startMode('normal'));
+  if (playEndlessBtn) playEndlessBtn.addEventListener('click', () => startMode('endless'));
+  if (changeNameBtn) changeNameBtn.addEventListener('click', changePlayerName);
 
   updateView();
   resetGame();

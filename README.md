@@ -1,6 +1,6 @@
 # Snake 7x7
 
-Current version: `0.0.3`
+Current version: `0.0.4`
 
 A browser-based Snake game with:
 - WASD / arrow-key controls
