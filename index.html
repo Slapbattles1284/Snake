@@ -23,7 +23,10 @@
         </div>
 
         <div class="home-topbar">
-          <div class="home-bank coin-pill"><img src="coin.svg" class="coin-icon" alt="Coin" /> <strong id="coinBankLabel">0</strong></div>
+          <div class="topbar-actions">
+            <div class="home-bank coin-pill"><img src="coin.svg" class="coin-icon" alt="Coin" /> <strong id="coinBankLabel">0</strong></div>
+            <button id="audioToggleBtn" class="audio-toggle" type="button" aria-label="Toggle audio">🔊 Audio</button>
+          </div>
         </div>
 
         <div class="home-panel">
@@ -35,6 +38,7 @@
 
           <div class="mode-stack">
             <button id="playNormalBtn" class="mode-btn primary" type="button">▶ Play</button>
+            <button id="playAngelBtn" class="mode-btn tertiary" type="button">😇 Angel Realm</button>
             <button id="playEndlessBtn" class="mode-btn secondary" type="button">∞ Endless</button>
           </div>
 
@@ -47,6 +51,14 @@
           <button id="leaderboardBtn" class="home-fab dock-btn" type="button" data-label="Leaderboard" aria-label="Leaderboard">
             <span class="dock-icon">🏆</span>
             <span class="dock-text">Ranks</span>
+          </button>
+          <button id="achievementsBtn" class="home-fab dock-btn" type="button" data-label="Achievements" aria-label="Achievements">
+            <span class="dock-icon">🏅</span>
+            <span class="dock-text">Goals</span>
+          </button>
+          <button id="statsBtn" class="home-fab dock-btn" type="button" data-label="Stats" aria-label="Stats">
+            <span class="dock-icon">📊</span>
+            <span class="dock-text">Data</span>
           </button>
           <button id="guideBtn" class="home-fab dock-btn" type="button" data-label="Guide" aria-label="Guide">
             <span class="dock-icon">📘</span>
@@ -133,6 +145,7 @@
           </div>
 
           <div class="game-inline-controls">
+            <button id="gameAudioToggleBtn" class="audio-toggle compact" type="button" aria-label="Toggle audio">🔊</button>
             <button id="pauseBtn" type="button">Pause</button>
             <button id="restartBtn" type="button">Restart</button>
             <button id="homeBtn" type="button">Home</button>
@@ -145,6 +158,7 @@
 
             <div class="game-panel">
               <canvas id="game" width="560" height="560" aria-label="7 by 7 snake game"></canvas>
+              <button id="gameFullscreenBtn" class="game-corner-btn" type="button" aria-label="Enter fullscreen" title="Enter fullscreen">⛶</button>
             </div>
 
             <div class="game-over-overlay hidden" id="gameOverOverlay">
@@ -169,8 +183,8 @@
                 </div>
 
                 <div class="game-over-actions">
-                  <button id="tryAgainBtn" type="button">Try Again</button>
-                  <button id="gameOverHomeBtn" class="ghost-btn" type="button">Home</button>
+                  <button id="tryAgainBtn" type="button"><span class="btn-icon" aria-hidden="true">↻</span> Try Again</button>
+                  <button id="gameOverHomeBtn" class="ghost-btn" type="button"><span class="btn-icon" aria-hidden="true">⌂</span> Home</button>
                 </div>
               </div>
             </div>
@@ -184,6 +198,14 @@
             <div class="bottom-stat-pill">
               <span>Round</span>
               <strong id="round">1</strong>
+            </div>
+            <div class="bottom-stat-pill">
+              <span>Pace</span>
+              <strong id="pace">Chill 4/s</strong>
+            </div>
+            <div class="bottom-stat-pill hidden" id="healthPill">
+              <span>Health</span>
+              <strong id="bottomHealth">20/20</strong>
             </div>
           </div>
         </div>
@@ -215,28 +237,53 @@
       </div>
     </section>
 
-    <section class="card cheat-card hidden" id="cheatPage">
-      <div class="card-header">
-        <p class="eyebrow">SECRET</p>
-        <h1>cheat room</h1>
-        <p class="subtext">You found the hidden page with all the cheat codes.</p>
-      </div>
+    <section class="card home-card cheat-card hidden" id="cheatPage">
+      <div class="home-stage cheat-stage">
+        <div class="home-stage-art" aria-hidden="true">
+          <span class="art-cell art-snake a1"></span>
+          <span class="art-cell art-snake a2"></span>
+          <span class="art-cell art-snake a3"></span>
+          <span class="art-cell art-food a4"></span>
+          <span class="art-cell art-food a5"></span>
+          <span class="art-cell art-wall a6"></span>
+          <span class="art-cell art-wall a7"></span>
+        </div>
 
-      <ul class="cheat-list">
-        <li><code>god</code> — become invincible to obstacles and self-collisions.</li>
-        <li><code>zoom</code> — a speed cheat that can be strengthened further.</li>
-        <li><code>unzoom</code> — slows the snake down.</li>
-        <li><code>food</code> — fill the world with apples.</li>
-        <li><code>aim</code> / <code>aimbot</code> — auto-pilot toward apples while dodging danger.</li>
-        <li><code>jackpot</code> — unlock the Jackpot skin and slot bonus UI.</li>
-        <li><code>heal</code>, <code>clear</code>, <code>smite</code>, <code>halo</code>, <code>bless</code>, <code>next</code></li>
-      </ul>
+        <div class="home-topbar">
+          <div class="home-bank coin-pill"><img src="coin.svg" class="coin-icon" alt="Coin" /> <strong id="cheatCoinLabel">0</strong></div>
+        </div>
 
-      <div class="controls">
-        <button id="backBtn" type="button">Back to game</button>
+        <div class="home-panel cheat-panel">
+          <div class="card-header home-header">
+            <p class="eyebrow">SECRET</p>
+            <h1>Cheat Room</h1>
+            <p class="subtext">All cheat codes live here, and finding this room unlocks a reward.</p>
+          </div>
+
+          <div class="cheat-achievement" id="cheatAchievementCard">
+            <p class="eyebrow">ACHIEVEMENT</p>
+            <h2 id="cheatAchievementLabel">Cheats Found</h2>
+            <p class="subtext">Discover this room to unlock 15 coins.</p>
+          </div>
+
+          <div class="cheat-grid" id="cheatCodeList" aria-label="Cheat codes"></div>
+
+          <div class="controls cheat-controls">
+            <button id="backBtn" type="button">Back to game</button>
+            <button id="cheatHomeBtn" class="ghost-btn" type="button">Home</button>
+          </div>
+        </div>
       </div>
     </section>
   </main>
+  <div class="achievement-toast hidden" id="achievementToast" aria-live="polite" aria-atomic="true">
+    <div class="achievement-toast-inner">
+      <p class="achievement-toast-kicker">Achievement Unlocked</p>
+      <h2 id="achievementToastTitle">Achievement</h2>
+      <p id="achievementToastDesc">Description</p>
+      <strong id="achievementToastReward">+0 coins</strong>
+    </div>
+  </div>
   <script src="script.js"></script>
 </body>
 </html>
