@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented here.
 
+## [0.0.11] - 2026-04-07
+
+### Added
+- Local account save/load tools plus transfer link and save-code import/export for moving progress between file and localhost copies
+
+### Changed
+- Dock notification badges now sit above the icons instead of getting buried behind them
+- Lucky Spin now takes a longer, smoother full-wheel run before it lands on the reward
+
 ## [0.0.10] - 2026-04-07
 
 ### Changed

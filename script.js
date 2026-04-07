@@ -278,6 +278,8 @@
   let playerName = 'Player';
   let jackpotHud = { mode: 'XP', nextRollAt: 0 };
   let audioEnabled = true;
+  let activeProfileId = '';
+  let accountNotice = '';
   const audioState = {
     ctx: null,
     masterGain: null,
@@ -300,6 +302,9 @@
   const audioEnabledStorageKey = 'snakeAudioEnabled';
   const coinEconomyVersionKey = 'snakeCoinEconomyVersion';
   const coinEconomyVersion = '2';
+  const saveSnapshotVersion = 1;
+  const saveLinkParam = 'save';
+  const playerNameStorageKey = 'snakePlayerName';
   const bestScoreStorageKey = 'snakeBestScore';
   const ownedSkinsStorageKey = 'snakeOwnedSkins';
   const equippedSkinStorageKey = 'snakeEquippedSkin';
@@ -307,6 +312,8 @@
   const lifetimeStatsStorageKey = 'snakeLifetimeStats';
   const dockNoticeStorageKey = 'snakeDockNoticeSeen';
   const leaderboardOverrideStorageKey = 'snakeLeaderboardOverridePermanent';
+  const activeProfileStorageKey = 'snakeActiveProfileId';
+  const profileStoragePrefix = 'snakeProfile:';
   const cheatCatalog = [
     { code: 'fghjfghjfghjfghjfghj', title: 'Room Code', desc: 'Opens the hidden cheat room.' },
     { code: 'god', title: 'God Mode', desc: 'Become invincible to walls, obstacles, and self-collisions.' },
@@ -446,7 +453,7 @@
   ];
 
   try {
-    const savedName = localStorage.getItem('snakePlayerName');
+    const savedName = localStorage.getItem(playerNameStorageKey);
     if (savedName) playerName = savedName;
     coins = Number.parseInt(localStorage.getItem(coinStorageKey) || '0', 10) || 0;
     bestScore = Number.parseInt(localStorage.getItem(bestScoreStorageKey) || '0', 10) || 0;
@@ -468,6 +475,8 @@
     const savedAudioEnabled = localStorage.getItem(audioEnabledStorageKey);
     if (savedAudioEnabled === '0') audioEnabled = false;
     leaderboardAbuseMode = localStorage.getItem(leaderboardOverrideStorageKey) === '1';
+    const savedActiveProfileId = localStorage.getItem(activeProfileStorageKey);
+    if (savedActiveProfileId) activeProfileId = savedActiveProfileId;
     const savedEconomyVersion = localStorage.getItem(coinEconomyVersionKey);
     if (savedEconomyVersion !== coinEconomyVersion) {
       coins = 0;
@@ -549,6 +558,331 @@
     } catch {
       // ignore storage errors
     }
+  }
+
+  function setAccountNotice(message = '') {
+    accountNotice = String(message || '').trim();
+  }
+
+  function cloneJson(value, fallback = null) {
+    try {
+      return JSON.parse(JSON.stringify(value ?? fallback));
+    } catch {
+      return fallback;
+    }
+  }
+
+  function encodeBase64Url(value) {
+    return btoa(unescape(encodeURIComponent(String(value))))
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/g, '');
+  }
+
+  function decodeBase64Url(value) {
+    const normalized = String(value || '').replace(/-/g, '+').replace(/_/g, '/');
+    const padded = normalized + '='.repeat((4 - (normalized.length % 4 || 4)) % 4);
+    return decodeURIComponent(escape(atob(padded)));
+  }
+
+  function sanitizeProfileId(value) {
+    return String(value || '')
+      .trim()
+      .replace(/\s+/g, ' ')
+      .slice(0, 24);
+  }
+
+  function sanitizeProfileSecret(value) {
+    return String(value || '').trim().slice(0, 24);
+  }
+
+  function getProfileStorageKey(profileId, secret) {
+    const cleanId = sanitizeProfileId(profileId);
+    const cleanSecret = sanitizeProfileSecret(secret);
+    if (!cleanId || !cleanSecret) return '';
+    return `${profileStoragePrefix}${cleanId.toLowerCase()}:${hashString(cleanSecret)}`;
+  }
+
+  function saveActiveProfileId() {
+    try {
+      if (activeProfileId) localStorage.setItem(activeProfileStorageKey, activeProfileId);
+      else localStorage.removeItem(activeProfileStorageKey);
+    } catch {
+      // ignore storage errors
+    }
+  }
+
+  function buildSaveSnapshot() {
+    normalizeMissionStreak();
+    normalizeLifetimeStats();
+    normalizeDockNoticeSeen();
+    normalizeSkinState();
+    return {
+      version: saveSnapshotVersion,
+      exportedAt: Date.now(),
+      playerName,
+      coins,
+      bestScore,
+      ownedSkins: [...new Set(ownedSkins)],
+      equippedSkin,
+      spinReadyAt,
+      challengeState: cloneJson(challengeState, null),
+      missionStreak: cloneJson(missionStreak, { count: 0, best: 0, lastCompletedDate: '' }),
+      achievements: cloneJson(achievements, {}),
+      lifetimeStats: cloneJson(lifetimeStats, {}),
+      dockNoticeSeen: cloneJson(dockNoticeSeen, {}),
+      endlessLeaderboard: cloneJson(endlessLeaderboard, []),
+      leaderboardAbuseMode,
+      audioEnabled,
+      dailyRewardAt: Number.parseInt(localStorage.getItem(dailyRewardStorageKey) || '0', 10) || 0
+    };
+  }
+
+  function encodeSaveSnapshot(snapshot = buildSaveSnapshot()) {
+    return encodeBase64Url(JSON.stringify(snapshot));
+  }
+
+  function decodeSaveSnapshot(rawValue) {
+    if (!rawValue) return null;
+    try {
+      const decoded = decodeBase64Url(rawValue);
+      const parsed = JSON.parse(decoded);
+      return parsed && typeof parsed === 'object' ? parsed : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function sanitizeSaveSnapshot(snapshot) {
+    if (!snapshot || typeof snapshot !== 'object') return null;
+    const allowedSkinKeys = new Set(snakeSkins.map(skin => skin.key));
+    const incomingOwned = Array.isArray(snapshot.ownedSkins) ? snapshot.ownedSkins : ['classic'];
+    const nextOwnedSkins = [...new Set(incomingOwned.filter(key => allowedSkinKeys.has(key)))];
+    if (!nextOwnedSkins.includes('classic')) nextOwnedSkins.unshift('classic');
+    return {
+      playerName: String(snapshot.playerName || 'Player').trim().slice(0, 18) || 'Player',
+      coins: Math.max(0, Number.parseInt(snapshot.coins || '0', 10) || 0),
+      bestScore: Math.max(0, Number.parseInt(snapshot.bestScore || '0', 10) || 0),
+      ownedSkins: nextOwnedSkins,
+      equippedSkin: nextOwnedSkins.includes(snapshot.equippedSkin) ? snapshot.equippedSkin : 'classic',
+      spinReadyAt: Math.max(0, Number.parseInt(snapshot.spinReadyAt || '0', 10) || 0),
+      challengeState: snapshot.challengeState && typeof snapshot.challengeState === 'object' ? snapshot.challengeState : null,
+      missionStreak: snapshot.missionStreak && typeof snapshot.missionStreak === 'object' ? snapshot.missionStreak : { count: 0, best: 0, lastCompletedDate: '' },
+      achievements: snapshot.achievements && typeof snapshot.achievements === 'object' ? snapshot.achievements : {},
+      lifetimeStats: snapshot.lifetimeStats && typeof snapshot.lifetimeStats === 'object' ? snapshot.lifetimeStats : {},
+      dockNoticeSeen: snapshot.dockNoticeSeen && typeof snapshot.dockNoticeSeen === 'object' ? snapshot.dockNoticeSeen : {},
+      endlessLeaderboard: Array.isArray(snapshot.endlessLeaderboard) ? snapshot.endlessLeaderboard.slice(0, 10) : [],
+      leaderboardAbuseMode: !!snapshot.leaderboardAbuseMode,
+      audioEnabled: snapshot.audioEnabled !== false,
+      dailyRewardAt: Math.max(0, Number.parseInt(snapshot.dailyRewardAt || '0', 10) || 0)
+    };
+  }
+
+  function applySaveSnapshot(snapshot, sourceLabel = 'Save') {
+    const sanitized = sanitizeSaveSnapshot(snapshot);
+    if (!sanitized) return false;
+
+    playerName = sanitized.playerName;
+    coins = sanitized.coins;
+    bestScore = sanitized.bestScore;
+    ownedSkins = sanitized.ownedSkins;
+    equippedSkin = sanitized.equippedSkin;
+    spinReadyAt = sanitized.spinReadyAt;
+    challengeState = sanitized.challengeState;
+    missionStreak = sanitized.missionStreak;
+    achievements = sanitized.achievements;
+    lifetimeStats = sanitized.lifetimeStats;
+    dockNoticeSeen = sanitized.dockNoticeSeen;
+    endlessLeaderboard = sanitized.endlessLeaderboard;
+    leaderboardAbuseMode = sanitized.leaderboardAbuseMode;
+    audioEnabled = sanitized.audioEnabled;
+    leaderboardOverrideCharges = 0;
+    leaderboardOverrideUsedThisRun = false;
+    leaderboardDisqualifyingCheatUsed = false;
+    spinAnimationState = null;
+    spinAnimationToken += 1;
+    lastSpinResult = '';
+    activeAchievementToast = null;
+    achievementToastQueue = [];
+    achievementToastUntil = 0;
+    activeAchievementToastSignature = '';
+
+    normalizeMissionStreak();
+    normalizeLifetimeStats();
+    normalizeDockNoticeSeen();
+    normalizeSkinState();
+
+    try {
+      localStorage.setItem(playerNameStorageKey, playerName);
+      localStorage.setItem(dailyRewardStorageKey, String(sanitized.dailyRewardAt));
+      localStorage.setItem(coinEconomyVersionKey, coinEconomyVersion);
+    } catch {
+      // ignore storage errors
+    }
+    saveCoins();
+    saveBestScore();
+    saveOwnedSkins();
+    saveEquippedSkin();
+    saveSpinReadyAt();
+    saveChallengeState();
+    saveMissionStreak();
+    saveAchievements();
+    saveLifetimeStats();
+    saveDockNoticeSeen();
+    saveLeaderboardOverrideMode();
+    saveAudioPreference();
+    saveEndlessLeaderboard();
+    renderAudioButtons();
+
+    clearJackpotMode();
+    currentScreen = 'home';
+    shopOpen = false;
+    infoPanel = 'account';
+    window.location.hash = '';
+    resetModeProgress('normal');
+    resetGame(false, false);
+    setAccountNotice(`${sourceLabel} loaded on this version.`);
+    updateView();
+    return true;
+  }
+
+  function extractSaveToken(input) {
+    const raw = String(input || '').trim();
+    if (!raw) return '';
+    if (!/[/?=&]/.test(raw)) return raw;
+    try {
+      const url = new URL(raw, window.location.href);
+      return url.searchParams.get(saveLinkParam) || '';
+    } catch {
+      const match = raw.match(/[?&]save=([^&#]+)/i);
+      return match ? decodeURIComponent(match[1]) : raw;
+    }
+  }
+
+  function buildPortableSaveLink() {
+    const url = new URL(window.location.href);
+    url.searchParams.set(saveLinkParam, encodeSaveSnapshot());
+    url.hash = '';
+    return url.toString();
+  }
+
+  async function copyTextValue(value, fallbackLabel = 'value') {
+    const text = String(value || '');
+    if (!text) return false;
+    if (navigator.clipboard?.writeText) {
+      try {
+        await navigator.clipboard.writeText(text);
+        return true;
+      } catch {
+        // ignore and fall back
+      }
+    }
+    window.prompt(`Copy this ${fallbackLabel}:`, text);
+    return false;
+  }
+
+  async function copyCurrentSaveLink() {
+    const copied = await copyTextValue(buildPortableSaveLink(), 'save link');
+    setAccountNotice(copied
+      ? 'Transfer link copied. Open it on another version to import this save.'
+      : 'Transfer link ready. Copy it from the prompt and open it where you want the save.');
+    updateView();
+  }
+
+  async function copyCurrentSaveCode() {
+    const copied = await copyTextValue(encodeSaveSnapshot(), 'save code');
+    setAccountNotice(copied
+      ? 'Save code copied. Import it on the other version to bring progress over.'
+      : 'Save code ready. Copy it from the prompt and import it on the other version.');
+    updateView();
+  }
+
+  function saveCurrentProfile() {
+    const suggestedId = activeProfileId || playerName || 'Player';
+    const profileId = sanitizeProfileId(window.prompt('Save to account name', suggestedId));
+    if (!profileId) return;
+    const secret = sanitizeProfileSecret(window.prompt('Set account PIN or password', ''));
+    if (!secret) return;
+    const storageKey = getProfileStorageKey(profileId, secret);
+    if (!storageKey) return;
+    const record = {
+      id: profileId,
+      savedAt: Date.now(),
+      snapshot: buildSaveSnapshot()
+    };
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(record));
+      activeProfileId = profileId;
+      saveActiveProfileId();
+      setAccountNotice(`Account ${profileId} saved on this browser.`);
+      updateView();
+    } catch {
+      setAccountNotice('Account save failed. Storage may be blocked or full.');
+      updateView();
+    }
+  }
+
+  function loadSavedProfile() {
+    const suggestedId = activeProfileId || playerName || 'Player';
+    const profileId = sanitizeProfileId(window.prompt('Log into account name', suggestedId));
+    if (!profileId) return;
+    const secret = sanitizeProfileSecret(window.prompt('Enter account PIN or password', ''));
+    if (!secret) return;
+    const storageKey = getProfileStorageKey(profileId, secret);
+    if (!storageKey) return;
+    try {
+      const rawRecord = localStorage.getItem(storageKey);
+      if (!rawRecord) {
+        setAccountNotice(`No local account named ${profileId} matched that password.`);
+        updateView();
+        return;
+      }
+      const record = JSON.parse(rawRecord);
+      if (!applySaveSnapshot(record?.snapshot, `Account ${profileId}`)) {
+        setAccountNotice(`Account ${profileId} could not be loaded.`);
+        updateView();
+        return;
+      }
+      activeProfileId = profileId;
+      saveActiveProfileId();
+      setAccountNotice(`Account ${profileId} loaded on this browser.`);
+      updateView();
+    } catch {
+      setAccountNotice(`Account ${profileId} could not be loaded.`);
+      updateView();
+    }
+  }
+
+  function importSavePayload() {
+    const rawInput = window.prompt('Paste a save link or save code', '');
+    if (!rawInput) return;
+    const token = extractSaveToken(rawInput);
+    const snapshot = decodeSaveSnapshot(token);
+    if (!snapshot || !applySaveSnapshot(snapshot, 'Imported save')) {
+      setAccountNotice('That save link or code was not valid.');
+      updateView();
+      return;
+    }
+    activeProfileId = '';
+    saveActiveProfileId();
+    setAccountNotice('Imported save loaded. Local account login cleared until you log in again.');
+    updateView();
+  }
+
+  function maybeImportSaveFromUrl() {
+    const url = new URL(window.location.href);
+    const token = url.searchParams.get(saveLinkParam);
+    if (!token) return;
+    const snapshot = decodeSaveSnapshot(token);
+    if (snapshot && applySaveSnapshot(snapshot, 'Save link')) {
+      activeProfileId = '';
+      saveActiveProfileId();
+      setAccountNotice('Save link imported automatically. Local account login cleared until you log in again.');
+    } else {
+      setAccountNotice('Save link was found, but it could not be imported.');
+    }
+    url.searchParams.delete(saveLinkParam);
+    window.history.replaceState({}, document.title, url.toString());
   }
 
   function renderAudioButtons() {
@@ -1561,13 +1895,18 @@
     const outcome = resolveLuckySpinOutcome();
     const segments = buildSpinSegments();
     const highlightIndex = spinHighlightIndexForOutcome(outcome, segments);
+    const durationMs = 4200 + (Math.floor(Math.random() * 3) * 300);
+    const fullTurns = 9 + randomBetween(0, 2);
+    const rotationDeg = -((fullTurns * 360) + (highlightIndex * 45));
     const token = ++spinAnimationToken;
 
     spinAnimationState = {
       spinning: true,
       segments,
       highlightIndex,
-      resolveAt: Date.now() + 2200
+      rotationDeg,
+      durationMs,
+      resolveAt: Date.now() + durationMs
     };
     updateView();
 
@@ -1591,6 +1930,8 @@
         spinning: false,
         segments,
         highlightIndex,
+        rotationDeg,
+        durationMs,
         rewardText,
         rare: outcome.type === 'skin' || outcome.amount >= 10,
         expiresAt: Date.now() + 5200
@@ -1599,7 +1940,7 @@
       playUiSfx(outcome.type === 'skin' ? 'skin' : 'coin');
       updateHud();
       updateView();
-    }, 2200);
+    }, durationMs);
   }
 
   function isSkinOwned(key) {
@@ -2066,6 +2407,43 @@
       return;
     }
 
+    if (infoPanel === 'account') {
+      const currentTransferHost = window.location.protocol === 'file:'
+        ? 'file copy'
+        : `${window.location.hostname || 'localhost'}:${window.location.port || (window.location.protocol === 'https:' ? '443' : '80')}`;
+      infoTitleEl.textContent = 'account';
+      infoSubtitleEl.textContent = 'Local accounts save on this origin. Use transfer links or save codes to move progress between file and localhost versions.';
+      infoContentEl.innerHTML = `
+        <div class="info-card">
+          <strong>Current player</strong>
+          <div>Player <span class="info-tag">${playerName}</span>${activeProfileId ? ` • Account <span class="info-tag">${activeProfileId}</span>` : ' • No local account loaded'}</div>
+          <div style="margin-top:10px">This copy is running on <span class="info-tag">${currentTransferHost}</span>.</div>
+          <div style="margin-top:10px">${accountNotice || 'Save Account creates a local login on this version. Transfer links and save codes move progress between your file copy and your localhost copy.'}</div>
+        </div>
+        <div class="info-grid">
+          <div class="info-card">
+            <strong>Profile</strong>
+            <div>Create or update a local account save for this browser and origin.</div>
+            <button class="info-action" type="button" data-action="save-account">Save account</button>
+            <button class="info-action alt" type="button" data-action="load-account">Log in to account</button>
+          </div>
+          <div class="info-card">
+            <strong>Transfer</strong>
+            <div>Move your progress between the file version and the localhost version.</div>
+            <button class="info-action" type="button" data-action="copy-save-link">Copy transfer link</button>
+            <button class="info-action alt" type="button" data-action="copy-save-code">Copy save code</button>
+            <button class="info-action alt" type="button" data-action="import-save">Import save link/code</button>
+          </div>
+          <div class="info-card">
+            <strong>Identity</strong>
+            <div>Rename the player label shown on home and during runs.</div>
+            <button class="info-action alt" type="button" data-action="rename-player">Rename player</button>
+          </div>
+        </div>
+      `;
+      return;
+    }
+
     if (infoPanel === 'guide') {
       infoTitleEl.textContent = 'quick guide';
       infoSubtitleEl.textContent = 'Fast inputs, smooth runs, and a few tips before you jump in.';
@@ -2172,14 +2550,14 @@
       const spinning = !!activeSpin?.spinning;
       const settled = !!activeSpin && !activeSpin.spinning;
       const statusText = spinning ? 'Wheel spinning now' : (ready ? 'Ready now' : `Next spin in ${spinCooldownLabel()}`);
-      const settledRotation = settled ? ` style="transform:rotate(${-45 * highlightIndex}deg)"` : '';
+      const wheelStyle = activeSpin ? ` style="--spin-target:${activeSpin.rotationDeg || (-45 * highlightIndex)}deg;--spin-duration:${activeSpin.durationMs || 4200}ms"` : '';
       infoTitleEl.textContent = 'lucky spin';
-      infoSubtitleEl.textContent = 'Animated wheel spins now show off the reward instead of instantly popping a result.';
+      infoSubtitleEl.textContent = 'The wheel now takes a longer, smoother full run before it locks onto the reward.';
       infoContentEl.innerHTML = `
         <div class="spin-stage${spinning ? ' spinning' : ''}${settled ? ' settled' : ''}${activeSpin?.rare ? ' rare' : ''}">
           <div class="spin-wheel-shell">
             <div class="spin-pointer"></div>
-            <div class="spin-wheel"${settledRotation}>
+            <div class="spin-wheel"${wheelStyle}>
               ${segments.map((segment, index) => `
                 <span class="spin-segment${highlightIndex === index ? ' hit' : ''}" style="--segment:${index};--segment-color:${segment.color}">
                   <strong>${segment.icon}</strong>
@@ -2670,7 +3048,7 @@
     setDockLabel(spinBtn, spinReady ? 'Lucky Spin' : `Spin ${spinCooldownLabel()}`, 'Spin');
     if (spinBtn) spinBtn.classList.toggle('reward-ready', spinNotice);
     setDockBadge(spinBtn, spinNotice ? '!' : '');
-    setDockLabel(changeNameBtn, 'Change name', 'Name');
+    setDockLabel(changeNameBtn, activeProfileId ? `Account ${activeProfileId}` : 'Account & Save', 'Account');
     setDockBadge(changeNameBtn);
     const missionReadyCount = (challengeState?.missions || []).filter(mission => mission.progress >= mission.target && !mission.claimed).length;
     const eventNotice = hasUnseenDockNotice('event');
@@ -2796,7 +3174,7 @@
     if (cleaned !== playerName) incrementStat('nameChanges', 1);
     playerName = cleaned;
     try {
-      localStorage.setItem('snakePlayerName', playerName);
+      localStorage.setItem(playerNameStorageKey, playerName);
     } catch {
       // ignore storage errors
     }
@@ -6365,7 +6743,7 @@
   if (gameOverHomeBtn) gameOverHomeBtn.addEventListener('click', returnHome);
   if (playNormalBtn) playNormalBtn.addEventListener('click', () => startMode('normal'));
   if (playEndlessBtn) playEndlessBtn.addEventListener('click', () => startMode('endless'));
-  if (changeNameBtn) changeNameBtn.addEventListener('click', changePlayerName);
+  if (changeNameBtn) changeNameBtn.addEventListener('click', () => openInfoPanel('account'));
   if (dailyRewardBtn) dailyRewardBtn.addEventListener('click', claimDailyReward);
   if (leaderboardBtn) leaderboardBtn.addEventListener('click', () => openInfoPanel('leaderboard'));
   if (achievementsBtn) achievementsBtn.addEventListener('click', () => openInfoPanel('achievements'));
@@ -6387,6 +6765,15 @@
     if (button.dataset.action === 'spin') runLuckySpin();
     if (button.dataset.action === 'claim-event') claimChallenge('event');
     if (button.dataset.action === 'claim-mission') claimChallenge('mission', Number(button.dataset.index || 0));
+    if (button.dataset.action === 'rename-player') {
+      changePlayerName();
+      setAccountNotice(`Player name set to ${playerName}.`);
+    }
+    if (button.dataset.action === 'save-account') saveCurrentProfile();
+    if (button.dataset.action === 'load-account') loadSavedProfile();
+    if (button.dataset.action === 'copy-save-link') copyCurrentSaveLink();
+    if (button.dataset.action === 'copy-save-code') copyCurrentSaveCode();
+    if (button.dataset.action === 'import-save') importSavePayload();
     updateView();
   });
   if (shopOverlay) shopOverlay.addEventListener('click', (event) => {
@@ -6415,11 +6802,12 @@
   });
 
   normalizeSkinState();
+  maybeImportSaveFromUrl();
   renderAudioButtons();
   updateView();
   resetGame();
   window.setInterval(() => {
-    if (currentScreen === 'home') updateView();
+    if (currentScreen === 'home' && !spinAnimationState?.spinning) updateView();
   }, 1000);
   requestAnimationFrame(frame);
 })();
