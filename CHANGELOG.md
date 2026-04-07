@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented here.
 
+## [0.0.9] - 2026-04-07
+
+### Added
+- GitHub Pages deployment workflow so pushes to `main` can publish the static game as a live site
+
+### Changed
+- Release metadata now reflects the deployment-ready build
+
 ## [0.0.8] - 2026-04-07
 
 ### Added
