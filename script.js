@@ -2412,18 +2412,18 @@
         ? 'file copy'
         : `${window.location.hostname || 'localhost'}:${window.location.port || (window.location.protocol === 'https:' ? '443' : '80')}`;
       infoTitleEl.textContent = 'account';
-      infoSubtitleEl.textContent = 'Local accounts save on this origin. Use transfer links or save codes to move progress between file and localhost versions.';
+      infoSubtitleEl.textContent = 'This game saves in this browser on this device for this site address. Use transfer links or save codes to move progress between copies.';
       infoContentEl.innerHTML = `
         <div class="info-card">
           <strong>Current player</strong>
           <div>Player <span class="info-tag">${playerName}</span>${activeProfileId ? ` • Account <span class="info-tag">${activeProfileId}</span>` : ' • No local account loaded'}</div>
           <div style="margin-top:10px">This copy is running on <span class="info-tag">${currentTransferHost}</span>.</div>
-          <div style="margin-top:10px">${accountNotice || 'Save Account creates a local login on this version. Transfer links and save codes move progress between your file copy and your localhost copy.'}</div>
+          <div style="margin-top:10px">${accountNotice || 'Save Account creates a local login in this browser on this device. Transfer links and save codes move progress between copies.'}</div>
         </div>
         <div class="info-grid">
           <div class="info-card">
             <strong>Profile</strong>
-            <div>Create or update a local account save for this browser and origin.</div>
+            <div>Create or update a local account save for this browser and site address.</div>
             <button class="info-action" type="button" data-action="save-account">Save account</button>
             <button class="info-action alt" type="button" data-action="load-account">Log in to account</button>
           </div>
