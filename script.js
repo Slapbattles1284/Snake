@@ -846,7 +846,19 @@
     if (!ctx || !audioState.unlocked || !audioEnabled) return;
     const start = ctx.currentTime + 0.01;
 
-    if (kind === 'coin') {
+    if (kind === 'menu') {
+      playTone(freqFromMidi(67), start, 0.08, { type: 'triangle', volume: 0.034, cutoff: 2200 });
+      playTone(freqFromMidi(74), start + 0.04, 0.12, { type: 'sine', volume: 0.028, cutoff: 2800 });
+    } else if (kind === 'start') {
+      playChord([60, 64, 67], start, 0.24, { type: 'triangle', volume: 0.05, cutoff: 2300 });
+      playTone(freqFromMidi(79), start + 0.12, 0.22, { type: 'sine', volume: 0.04, cutoff: 3000 });
+    } else if (kind === 'bite') {
+      playTone(freqFromMidi(76), start, 0.07, { type: 'square', volume: 0.03, cutoff: 1800 });
+      playTone(freqFromMidi(81), start + 0.03, 0.1, { type: 'triangle', volume: 0.025, cutoff: 2500 });
+    } else if (kind === 'bonus') {
+      playTone(freqFromMidi(79), start, 0.12, { type: 'triangle', volume: 0.045, cutoff: 2400 });
+      playTone(freqFromMidi(86), start + 0.06, 0.18, { type: 'sine', volume: 0.034, cutoff: 3200 });
+    } else if (kind === 'coin') {
       playTone(freqFromMidi(79), start, 0.14, { type: 'triangle', volume: 0.06, cutoff: 2600 });
       playTone(freqFromMidi(84), start + 0.08, 0.16, { type: 'triangle', volume: 0.05, cutoff: 3000 });
     } else if (kind === 'skin') {
@@ -864,6 +876,13 @@
       playNoiseBurst(start, 0.12, { volume: 0.028, cutoff: 1200 });
     } else if (kind === 'toggle') {
       playTone(freqFromMidi(audioEnabled ? 76 : 52), start, 0.12, { type: 'triangle', volume: 0.04, cutoff: 2400 });
+    } else if (kind === 'unequip') {
+      playTone(freqFromMidi(72), start, 0.12, { type: 'triangle', volume: 0.034, cutoff: 2200 });
+      playTone(freqFromMidi(64), start + 0.06, 0.18, { type: 'sine', volume: 0.026, cutoff: 1800 });
+    } else if (kind === 'gameover') {
+      playTone(freqFromMidi(55), start, 0.28, { type: 'sawtooth', volume: 0.04, cutoff: 1000, glideTo: freqFromMidi(47) });
+      playTone(freqFromMidi(48), start + 0.08, 0.36, { type: 'triangle', volume: 0.03, cutoff: 1400, glideTo: freqFromMidi(40) });
+      playNoiseBurst(start + 0.06, 0.18, { volume: 0.024, cutoff: 900 });
     } else if (kind === 'jackpot') {
       playChord([72, 76, 79], start, 0.22, { type: 'triangle', volume: 0.05, cutoff: 2600 });
       playTone(freqFromMidi(84), start + 0.14, 0.28, { type: 'sine', volume: 0.038, cutoff: 3200 });
@@ -1597,6 +1616,28 @@
     return skin?.unlockHint || 'Unlock through gameplay';
   }
 
+  function getSkinActionConfig(skin, priceOverride = null) {
+    const owned = isSkinOwned(skin.key);
+    const active = equippedSkin === skin.key;
+    const achievementOnly = isAchievementOnlySkin(skin);
+    const price = priceOverride ?? getSkinPrice(skin);
+
+    if (active) {
+      if (skin.key === 'classic') {
+        return { label: 'Default equipped', className: 'skin-action owned' };
+      }
+      return { label: 'Unequip', className: 'skin-action unequip' };
+    }
+
+    if (owned) return { label: 'Equip', className: 'skin-action equip' };
+    if (achievementOnly) return { label: getSkinUnlockHint(skin), className: 'skin-action locked' };
+
+    return {
+      label: coins >= price ? `Buy for ${formatCount(price)}` : `Need ${formatCount(price - coins)}`,
+      className: 'skin-action'
+    };
+  }
+
   function getActiveSkin() {
     normalizeSkinState();
     return snakeSkins.find(skin => skin.key === equippedSkin) || snakeSkins[0];
@@ -1918,15 +1959,10 @@
     ` : '';
     const spotlightMarkup = spotlight ? (() => {
       const spotlightSkin = spotlight.skin;
-      const owned = isSkinOwned(spotlightSkin.key);
-      const active = equippedSkin === spotlightSkin.key;
       const previewStyle = buildSkinPreviewStyle(spotlightSkin);
       const spotlightArt = getSkinArtProfile(spotlightSkin);
       const spotlightTier = getSkinTier(spotlightSkin);
-      const buttonLabel = active
-        ? 'Equipped now'
-        : (owned ? 'Equip spotlight' : (coins >= spotlight.salePrice ? `Buy for ${formatCount(spotlight.salePrice)}` : `Need ${formatCount(spotlight.salePrice - coins)}`));
-      const buttonClass = active ? 'skin-action owned' : (owned ? 'skin-action equip' : 'skin-action');
+      const buttonAction = getSkinActionConfig(spotlightSkin, spotlight.salePrice);
       return `
         <article class="shop-spotlight tier-${spotlightTier.slug}">
           <div class="shop-spotlight-copy">
@@ -1937,7 +1973,7 @@
               <strong>${formatCount(spotlight.salePrice)}</strong>
               <span>${formatCount(spotlight.basePrice)}</span>
             </div>
-            <button class="${buttonClass}" type="button" data-skin="${spotlightSkin.key}">${buttonLabel}</button>
+            <button class="${buttonAction.className}" type="button" data-skin="${spotlightSkin.key}">${buttonAction.label}</button>
           </div>
           <div class="skin-preview spotlight-preview tier-${spotlightTier.slug} pattern-${spotlightArt.pattern}" style="${previewStyle}">
             <span class="skin-preview-fx tier-${spotlightTier.slug}" aria-hidden="true"></span>
@@ -1950,28 +1986,19 @@
     const orderedSkins = [...snakeSkins].sort(compareShopSkins);
 
     const skinsMarkup = orderedSkins.map(skin => {
-      const owned = isSkinOwned(skin.key);
       const active = equippedSkin === skin.key;
       const achievementOnly = isAchievementOnlySkin(skin);
       const price = getSkinPrice(skin);
       const spotlighted = spotlight?.skin.key === skin.key;
-      const canAfford = !achievementOnly && coins >= price;
       const tier = getSkinTier(skin);
       const previewStyle = buildSkinPreviewStyle(skin);
       const art = getSkinArtProfile(skin);
+      const buttonAction = getSkinActionConfig(skin);
       const priceMarkup = achievementOnly
         ? '<span class="skin-price reward-only">Achievement only</span>'
         : skin.price
         ? `<span class="skin-price"><img src="coin.svg" class="coin-icon" alt="Coin" /> ${formatCount(price)}${spotlighted ? ` <small class="skin-sale-cut">${formatCount(skin.price)}</small>` : ''}</span>`
         : '<span class="skin-price">Free</span>';
-      const buttonLabel = active
-        ? 'Equipped'
-        : (owned
-          ? 'Equip'
-          : (achievementOnly ? getSkinUnlockHint(skin) : (canAfford ? `Buy for ${formatCount(price)}` : `Need ${formatCount(price - coins)}`)));
-      const buttonClass = active
-        ? 'skin-action owned'
-        : (owned ? 'skin-action equip' : (achievementOnly ? 'skin-action locked' : 'skin-action'));
 
       return `
         <article class="skin-card tier-${tier.slug}${active ? ' active' : ''}${spotlighted ? ' sale' : ''}">
@@ -1986,7 +2013,7 @@
             ${priceMarkup}
           </div>
           <p class="skin-desc">${skin.desc}</p>
-          <button class="${buttonClass}" type="button" data-skin="${skin.key}">${buttonLabel}</button>
+          <button class="${buttonAction.className}" type="button" data-skin="${skin.key}">${buttonAction.label}</button>
         </article>
       `;
     }).join('');
@@ -1997,14 +2024,18 @@
   function toggleShop(force) {
     if (currentScreen !== 'home') return;
     infoPanel = '';
-    shopOpen = typeof force === 'boolean' ? force : !shopOpen;
+    const nextState = typeof force === 'boolean' ? force : !shopOpen;
+    const changed = nextState !== shopOpen;
+    shopOpen = nextState;
     if (shopOpen) markDockNoticeSeen('shop');
+    if (changed) playUiSfx('menu');
     renderShop();
     updateView();
   }
 
   function openInfoPanel(kind) {
     if (currentScreen !== 'home') return;
+    const changed = infoPanel !== kind || shopOpen;
     shopOpen = false;
     if (kind === 'achievements') markDockNoticeSeen('achievements');
     if (kind === 'stats') markDockNoticeSeen('stats');
@@ -2012,11 +2043,14 @@
     if (kind === 'events') markDockNoticeSeen('event');
     if (kind === 'missions') markDockNoticeSeen('missions');
     infoPanel = kind;
+    if (changed) playUiSfx('menu');
     updateView();
   }
 
   function closeInfoPanel() {
+    const hadPanel = !!infoPanel;
     infoPanel = '';
+    if (hadPanel) playUiSfx('menu');
     updateView();
   }
 
@@ -2273,6 +2307,15 @@
       incrementStat('skinsBought', 1);
       showRealmMessage(price < skin.price ? `${skin.name} unlocked on spotlight sale` : `${skin.name} unlocked`, 1600);
       playUiSfx('skin');
+    } else if (equippedSkin === key) {
+      if (key === 'classic') {
+        showRealmMessage('Classic is already active', 1200);
+      } else {
+        equippedSkin = 'classic';
+        saveEquippedSkin();
+        showRealmMessage(`${skin.name} unequipped`, 1200);
+        playUiSfx('unequip');
+      }
     } else if (equippedSkin !== key) {
       equippedSkin = key;
       saveEquippedSkin();
@@ -2282,6 +2325,7 @@
 
     renderShop();
     updateHud();
+    updateView();
   }
 
   function toggleFullscreen() {
@@ -2428,6 +2472,7 @@
     blessingSelectionOpen = false;
     clearCountdown();
     triggerScreenJuice(14, 0.22, 'rgba(255, 82, 82, 0.2)');
+    playUiSfx('gameover');
     if (message) showRealmMessage(message, 1800);
     recordEndlessLeaderboardResult();
     updateHud();
@@ -2718,6 +2763,7 @@
     if (angelRealm) incrementStat('angelEntries', 1);
     resetGame(false, true);
     showRealmMessage(angelRealm ? 'Angel Realm awakened' : (endlessMode ? 'Endless mode' : 'Normal mode'), 1400);
+    playUiSfx('start');
     updateView();
   }
 
@@ -2740,6 +2786,7 @@
     window.location.hash = '';
     clearCountdown();
     togglePause(false);
+    playUiSfx('menu');
     updateView();
   }
 
@@ -6105,6 +6152,7 @@
         }
       }
       food = null;
+      playUiSfx('bite');
       advanceProgress();
     } else if (ateBonusApple) {
       score += 6;
@@ -6117,6 +6165,7 @@
       emitParticles(newHead.x, newHead.y, 9, ['rgba(255,255,255,0.95)', 'rgba(188,231,104,0.92)', 'rgba(96,168,54,0.88)']);
       emitFloatingText(newHead.x, newHead.y, '+6', '#e4ffac');
       triggerScreenJuice(3, 0.06, 'rgba(146, 214, 84, 0.12)');
+      playUiSfx('bonus');
     } else {
       snake.pop();
     }

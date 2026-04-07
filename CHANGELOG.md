@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented here.
 
+## [0.0.8] - 2026-04-07
+
+### Added
+- More in-game synth audio cues for mode starts, shop and panel navigation, fruit pickups, unequipping, and game over
+- A real unequip flow for owned skins that drops you back to `Classic` without rebuying anything
+
+### Changed
+- Shop actions now show `Unequip` for the active non-default skin instead of leaving it stuck on an equipped state
+- Updated the shop copy so the equip/unequip flow is clearer at a glance
+
 ## [0.0.7] - 2026-04-06
 
 ### Added
@@ -11,7 +21,7 @@ All notable changes to this project will be documented here.
 - Collector-vault summary card in the shop and a new daily `Launch Queue` challenge type for starting runs
 
 ### Changed
-- Secret achievements such as `Cheats Found` and the Arch Angle boss line now keep their descriptions hidden until unlocked
+- Secret achievements such as `Cheats Found` and the Arch Angel boss line now keep their descriptions hidden until unlocked
 - Shop prices, spotlight discounts, and skin tier labels now scale better for expensive late-game cosmetics
 - Player stats and reward displays now format larger numbers more cleanly
 - Skin previews now have more motion and shine so the expanded shop feels more alive

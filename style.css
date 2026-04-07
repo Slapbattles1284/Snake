@@ -941,6 +941,7 @@ code{background:#111;color:#fff;border-radius:6px;padding:2px 6px}
 .skin-desc{margin:8px 0 14px;color:var(--text-soft);font-size:14px;line-height:1.45}
 .skin-action{width:100%;justify-content:center;background:linear-gradient(180deg,#39d87f 0%,#159e56 100%)}
 .skin-action.equip{background:linear-gradient(180deg,#2a3957 0%,#182237 100%)}
+.skin-action.unequip{background:linear-gradient(180deg,#6f4f24 0%,#3d2710 100%)}
 .skin-action.owned{background:linear-gradient(180deg,#395477 0%,#20314d 100%)}
 .skin-action.locked{background:linear-gradient(180deg,#384b67 0%,#1a2638 100%)}
 .skin-card.tier-core{border-color:rgba(159,241,169,.14)}
