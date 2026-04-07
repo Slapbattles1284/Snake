@@ -29,7 +29,6 @@
   const gameFullscreenBtn = document.getElementById('gameFullscreenBtn');
   const backBtn = document.getElementById('backBtn');
   const playNormalBtn = document.getElementById('playNormalBtn');
-  const playAngelBtn = document.getElementById('playAngelBtn');
   const playEndlessBtn = document.getElementById('playEndlessBtn');
   const changeNameBtn = document.getElementById('changeNameBtn');
   const dailyRewardBtn = document.getElementById('dailyRewardBtn');
@@ -311,7 +310,6 @@
   const cheatCatalog = [
     { code: 'fghjfghjfghjfghjfghj', title: 'Room Code', desc: 'Opens the hidden cheat room.' },
     { code: 'god', title: 'God Mode', desc: 'Become invincible to walls, obstacles, and self-collisions.' },
-    { code: 'angel', title: 'Angel Realm', desc: 'Jump straight into the angel-realm ruleset.' },
     { code: 'jackpot', title: 'Jackpot', desc: 'Unlock the jackpot skin and bonus HUD.' },
     { code: 'leaderboardabusing', title: 'Leaderboard Override Once', desc: 'In endless mode, the next cheat stays leaderboard-safe one time.' },
     { code: 'leaderboardabusingyes', title: 'Leaderboard Override Permanent', desc: 'Turns on permanent endless leaderboard cheat protection until you disable it.' },
@@ -413,11 +411,11 @@
     { key: 'wheel-winner', title: 'Wheel Winner', desc: 'Use Lucky Spin 5 times.', reward: 8, target: 5, progress: () => lifetimeStats.spinsUsed || 0 },
     { key: 'code-breaker', title: 'Code Breaker', desc: 'Use any cheat code.', reward: 6, target: 1, progress: () => lifetimeStats.cheatsUsed || 0 },
     { key: 'cheats-found', title: 'Cheats Found', desc: 'Discover the cheat room.', reward: 15, target: 1, progress: () => lifetimeStats.cheatRoomsFound || 0, secret: 'desc' },
-    { key: 'angel-call', title: 'Angel Call', desc: 'Enter the Angel Realm.', reward: 8, target: 1, progress: () => lifetimeStats.angelEntries || 0 },
-    { key: 'boss-breaker', title: 'Boss Breaker', desc: 'Defeat the Arch Angel.', reward: 15, target: 1, progress: () => lifetimeStats.bossDefeats || 0, secret: 'desc' },
-    { key: 'angelic-ascension', title: 'Angelic Ascension', desc: 'Defeat the Arch Angel and unlock the Angel skin.', reward: 0, rewardText: 'Angel skin', skinReward: 'angelskin', target: 1, progress: () => lifetimeStats.bossDefeats || 0, secret: 'desc' },
-    { key: 'boss-baron', title: 'Boss Baron', desc: 'Defeat the Arch Angel 3 times.', reward: 28, target: 3, progress: () => lifetimeStats.bossDefeats || 0, secret: 'desc' },
-    { key: 'boss-overlord', title: 'Boss Overlord', desc: 'Defeat the Arch Angel 10 times.', reward: 60, target: 10, progress: () => lifetimeStats.bossDefeats || 0, secret: 'desc' },
+    { key: 'angel-call', title: 'Angel Call', desc: 'Enter the Angel Realm.', reward: 8, target: 1, progress: () => lifetimeStats.angelEntries || 0, secret: 'full' },
+    { key: 'boss-breaker', title: 'Boss Breaker', desc: 'Defeat the Arch Angel.', reward: 15, target: 1, progress: () => lifetimeStats.bossDefeats || 0, secret: 'full' },
+    { key: 'angelic-ascension', title: 'Angelic Ascension', desc: 'Defeat the Arch Angel and unlock the Angel skin.', reward: 0, rewardText: 'Angel skin', skinReward: 'angelskin', target: 1, progress: () => lifetimeStats.bossDefeats || 0, secret: 'full' },
+    { key: 'boss-baron', title: 'Boss Baron', desc: 'Defeat the Arch Angel 3 times.', reward: 28, target: 3, progress: () => lifetimeStats.bossDefeats || 0, secret: 'full' },
+    { key: 'boss-overlord', title: 'Boss Overlord', desc: 'Defeat the Arch Angel 10 times.', reward: 60, target: 10, progress: () => lifetimeStats.bossDefeats || 0, secret: 'full' },
     { key: 'closet-open', title: 'Closet Open', desc: 'Buy your first skin.', reward: 5, target: 1, progress: () => lifetimeStats.skinsBought || 0 },
     { key: 'style-shelf', title: 'Style Shelf', desc: 'Own 10 skins.', reward: 10, target: 10, progress: () => Math.max(0, ownedSkins.length - 1) },
     { key: 'skin-hoarder', title: 'Skin Hoarder', desc: 'Own 20 skins.', reward: 18, target: 20, progress: () => Math.max(0, ownedSkins.length - 1) },
@@ -429,7 +427,7 @@
     { key: 'wheel-veteran', title: 'Wheel Veteran', desc: 'Use Lucky Spin 15 times.', reward: 15, target: 15, progress: () => lifetimeStats.spinsUsed || 0 },
     { key: 'wheel-galaxy', title: 'Wheel Galaxy', desc: 'Use Lucky Spin 50 times.', reward: 34, target: 50, progress: () => lifetimeStats.spinsUsed || 0 },
     { key: 'code-machine', title: 'Code Machine', desc: 'Use 10 cheat codes.', reward: 12, target: 10, progress: () => lifetimeStats.cheatsUsed || 0 },
-    { key: 'halo-hopper', title: 'Halo Hopper', desc: 'Enter the Angel Realm 5 times.', reward: 12, target: 5, progress: () => lifetimeStats.angelEntries || 0 },
+    { key: 'halo-hopper', title: 'Halo Hopper', desc: 'Enter the Angel Realm 5 times.', reward: 12, target: 5, progress: () => lifetimeStats.angelEntries || 0, secret: 'full' },
     { key: 'mission-chief', title: 'Mission Chief', desc: 'Claim 15 missions.', reward: 15, target: 15, progress: () => lifetimeStats.missionsClaimed || 0 },
     { key: 'mission-emperor', title: 'Mission Emperor', desc: 'Claim 40 missions.', reward: 32, target: 40, progress: () => lifetimeStats.missionsClaimed || 0 },
     { key: 'event-engine', title: 'Event Engine', desc: 'Claim 8 events.', reward: 16, target: 8, progress: () => lifetimeStats.eventsClaimed || 0 },
@@ -2073,7 +2071,7 @@
       infoSubtitleEl.textContent = 'Fast inputs, smooth runs, and a few tips before you jump in.';
       infoContentEl.innerHTML = [
         '<div class="info-card"><strong>Controls</strong>Use arrow keys, WASD, or the touch pad on mobile. The snake now previews turns instantly.</div>',
-        '<div class="info-card"><strong>Angel Realm</strong>Start it from the home screen for the boss fight, blessings, realm XP, and the new Angel skin reward.</div>',
+        '<div class="info-card"><strong>Shop</strong>Buy skins with coins, equip what you like, and switch back to Classic any time.</div>',
         '<div class="info-card"><strong>Lucky Spin</strong>Spin every 4 hours for coins or a surprise skin.</div>',
         '<div class="info-card"><strong>Progress</strong>Events, missions, and achievements track automatically while you play.</div>'
       ].join('');
@@ -2137,8 +2135,8 @@
         ['Spin uses', lifetimeStats.spinsUsed || 0],
         ['Daily claims', lifetimeStats.dailyClaims || 0],
         ['Cheats used', lifetimeStats.cheatsUsed || 0],
-        ['Angel entries', lifetimeStats.angelEntries || 0],
-        ['Boss defeats', lifetimeStats.bossDefeats || 0],
+        ...(lifetimeStats.angelEntries > 0 ? [['Angel entries', lifetimeStats.angelEntries || 0]] : []),
+        ...(lifetimeStats.bossDefeats > 0 ? [['Boss defeats', lifetimeStats.bossDefeats || 0]] : []),
         ['Mission claims', lifetimeStats.missionsClaimed || 0],
         ['Event claims', lifetimeStats.eventsClaimed || 0],
         ['Leaderboard posts', lifetimeStats.leaderboardEntries || 0],
@@ -6366,7 +6364,6 @@
   if (tryAgainBtn) tryAgainBtn.addEventListener('click', () => resetGame(false, true));
   if (gameOverHomeBtn) gameOverHomeBtn.addEventListener('click', returnHome);
   if (playNormalBtn) playNormalBtn.addEventListener('click', () => startMode('normal'));
-  if (playAngelBtn) playAngelBtn.addEventListener('click', () => startMode('angel'));
   if (playEndlessBtn) playEndlessBtn.addEventListener('click', () => startMode('endless'));
   if (changeNameBtn) changeNameBtn.addEventListener('click', changePlayerName);
   if (dailyRewardBtn) dailyRewardBtn.addEventListener('click', claimDailyReward);

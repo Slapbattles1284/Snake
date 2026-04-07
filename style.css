@@ -210,11 +210,6 @@ code{background:#111;color:#fff;border-radius:6px;padding:2px 6px}
   pointer-events:none;
 }
 .mode-btn.primary{background:linear-gradient(180deg,#39d87f 0%,#159e56 100%)}
-.mode-btn.tertiary{
-  background:linear-gradient(180deg,#55d9ff 0%,#1b6fd8 100%);
-  border:1px solid rgba(255,255,255,.16);
-  animation-delay:-1.3s;
-}
 .mode-btn.secondary{
   background:linear-gradient(180deg,#223250 0%,#131b2d 100%);
   border:1px solid rgba(255,255,255,.12);

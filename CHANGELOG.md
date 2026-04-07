@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented here.
 
+## [0.0.10] - 2026-04-07
+
+### Changed
+- Restored the hidden-mode flow so the secret run no longer appears on the home screen, guide, cheat-room list, or locked achievement previews
+
 ## [0.0.9] - 2026-04-07
 
 ### Added
