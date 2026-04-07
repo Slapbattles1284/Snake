@@ -11,26 +11,75 @@
   const roundEl = document.getElementById('round');
   const roundCapEl = document.getElementById('roundCap');
   const scoreEl = document.getElementById('score');
+  const bestScoreEl = document.getElementById('bestScore');
+  const coinsEl = document.getElementById('coins');
   const healthEl = document.getElementById('health');
   const xpEl = document.getElementById('xp');
+  const comboEl = document.getElementById('combo');
+  const mapSizeEl = document.getElementById('mapSize');
   const statusEl = document.getElementById('status');
   const restartBtn = document.getElementById('restartBtn');
+  const pauseBtn = document.getElementById('pauseBtn');
   const homeBtn = document.getElementById('homeBtn');
   const backBtn = document.getElementById('backBtn');
   const playNormalBtn = document.getElementById('playNormalBtn');
   const playEndlessBtn = document.getElementById('playEndlessBtn');
   const changeNameBtn = document.getElementById('changeNameBtn');
+  const dailyRewardBtn = document.getElementById('dailyRewardBtn');
+  const leaderboardBtn = document.getElementById('leaderboardBtn');
+  const guideBtn = document.getElementById('guideBtn');
+  const spinBtn = document.getElementById('spinBtn');
+  const eventsBtn = document.getElementById('eventsBtn');
+  const missionsBtn = document.getElementById('missionsBtn');
+  const shopBtn = document.getElementById('shopBtn');
+  const fullscreenBtn = document.getElementById('fullscreenBtn');
   const playerNameLabel = document.getElementById('playerNameLabel');
+  const coinBankLabel = document.getElementById('coinBankLabel');
+  const abilityOverlay = document.getElementById('abilityOverlay');
+  const abilityChoicesEl = document.getElementById('abilityChoices');
+  const infoOverlay = document.getElementById('infoOverlay');
+  const infoTitleEl = document.getElementById('infoTitle');
+  const infoSubtitleEl = document.getElementById('infoSubtitle');
+  const infoContentEl = document.getElementById('infoContent');
+  const infoCloseBtn = document.getElementById('infoCloseBtn');
+  const shopOverlay = document.getElementById('shopOverlay');
+  const shopItemsEl = document.getElementById('shopItems');
+  const shopCloseBtn = document.getElementById('shopCloseBtn');
+  const shopCoinLabel = document.getElementById('shopCoinLabel');
+  const touchButtons = Array.from(document.querySelectorAll('.touch-btn'));
+  const cardWrap = document.querySelector('.card-wrap');
   const homePage = document.getElementById('homePage');
   const gamePage = document.getElementById('gamePage');
   const cheatPage = document.getElementById('cheatPage');
+  const gameModeLabel = document.getElementById('gameModeLabel');
+  const realmXpWrap = document.getElementById('realmXpWrap');
+  const gameOverOverlay = document.getElementById('gameOverOverlay');
+  const gameOverTitleEl = document.getElementById('gameOverTitle');
+  const tryAgainBtn = document.getElementById('tryAgainBtn');
+  const gameOverHomeBtn = document.getElementById('gameOverHomeBtn');
 
   const baseGridSize = 7;
+  const maxGridSize = 28;
+  const baseTickMs = 196;
+  const minMapTickMs = 92;
+  const minAbsoluteTickMs = 54;
   const maxRounds = 30;
   const maxLevels = 15;
   const angelMaxRounds = 50;
   const angelMaxLevels = 30;
   const portalSequence = 'fghj'.repeat(5).split('');
+  const snakeSkins = [
+    { key: 'classic', name: 'Classic', emoji: '🐍', price: 0, desc: 'The default green runner.', body: '#2bc866', head: '#5ef38c', accent: '#9af0b8', label: '#ffffff', bgA: '#193324', bgB: '#0b1711' },
+    { key: 'frost', name: 'Frost Byte', emoji: '🧊', price: 12, desc: 'Cold blue squares with an icy glow.', body: '#52c7ff', head: '#d6f6ff', accent: '#91dfff', label: '#effbff', bgA: '#18374d', bgB: '#0a1826' },
+    { key: 'lava', name: 'Lava Rush', emoji: '🔥', price: 18, desc: 'Bright ember colors for hot streaks.', body: '#ff6a3d', head: '#ffd166', accent: '#ff9b54', label: '#fff0c4', bgA: '#4a1e14', bgB: '#1b0b07' },
+    { key: 'royal', name: 'Royal Circuit', emoji: '👑', price: 26, desc: 'Gold highlights and deep arcade blue.', body: '#6b7cff', head: '#ffd95e', accent: '#b5beff', label: '#fff4b8', bgA: '#1d2754', bgB: '#0d1228' },
+    { key: 'shadow', name: 'Shadow Venom', emoji: '🌑', price: 32, desc: 'A stealth skin with neon green edges.', body: '#1e2938', head: '#8effa7', accent: '#4ade80', label: '#d7ffe1', bgA: '#111827', bgB: '#030712' },
+    { key: 'bubble', name: 'Bubble Bloom', emoji: '🫧', price: 22, desc: 'Soft aqua scales with a bright candy shine.', body: '#5eead4', head: '#cffafe', accent: '#99f6e4', label: '#effffe', bgA: '#10343a', bgB: '#081b21' },
+    { key: 'sunset', name: 'Sunset Coil', emoji: '🌇', price: 24, desc: 'Warm neon orange and pink like an arcade sunset.', body: '#ff7a59', head: '#ffd0a8', accent: '#ff9ac1', label: '#fff1de', bgA: '#4d1f2b', bgB: '#1a1021' },
+    { key: 'toxic', name: 'Toxic Byte', emoji: '☣️', price: 29, desc: 'Radioactive green edges with a dark tech body.', body: '#1a2f24', head: '#b7ff3c', accent: '#67e8a5', label: '#f3ffd9', bgA: '#112416', bgB: '#07110a' },
+    { key: 'candy', name: 'Candy Coil', emoji: '🍬', price: 21, desc: 'Bright striped colors for a playful run.', body: '#ff5ea8', head: '#ffe27a', accent: '#8bd3ff', label: '#fff7d2', bgA: '#4a1730', bgB: '#1f1333' },
+    { key: 'storm', name: 'Storm Fang', emoji: '⛈️', price: 35, desc: 'Electric blue highlights with a thunder-dark frame.', body: '#2b3350', head: '#9bd7ff', accent: '#ffe56d', label: '#eef7ff', bgA: '#12192c', bgB: '#070b14' }
+  ];
 
   let snake = [];
   let prevSnake = [];
@@ -50,7 +99,7 @@
   let keyBuffer = [];
   let pendingSpeedTimer = null;
   let lastProcessedSpeedBuffer = '';
-  let tickMs = 160;
+  let tickMs = baseTickMs;
   let accumulator = 0;
   let lastFrameTime = 0;
   let nextTongueAt = 0;
@@ -63,7 +112,7 @@
   let maxHealth = 10;
   let xp = 0;
   let xpLevel = 1;
-  let abilities = { vigor: 0, reflex: 0, luck: 0 };
+  let abilities = { vigor: 0, reflex: 0, luck: 0, shield: 0, bounty: 0 };
   let angels = [];
   let generalAngels = [];
   let projectiles = [];
@@ -81,24 +130,790 @@
   let endlessMode = false;
   let playerName = 'Player';
   let jackpotHud = { mode: 'XP', nextRollAt: 0 };
+  const leaderboardStorageKey = 'snakeEndlessLeaderboard';
+  const coinStorageKey = 'snakeCoins';
+  const dailyRewardStorageKey = 'snakeDailyRewardAt';
+  const spinReadyAtStorageKey = 'snakeSpinReadyAt';
+  const challengeStateStorageKey = 'snakeChallengeState';
+  const missionStreakStorageKey = 'snakeMissionStreak';
+  const coinEconomyVersionKey = 'snakeCoinEconomyVersion';
+  const coinEconomyVersion = '2';
+  const bestScoreStorageKey = 'snakeBestScore';
+  const ownedSkinsStorageKey = 'snakeOwnedSkins';
+  const equippedSkinStorageKey = 'snakeEquippedSkin';
+  let cheatsUsedThisRun = false;
+  let leaderboardAbuseMode = false;
+  let leaderboardSavedThisLife = false;
+  let endlessLeaderboard = [];
+  let lastLeaderboardResult = null;
+  let paused = false;
+  let coins = 0;
+  let comboCount = 0;
+  let comboTimer = 0;
+  let pendingBlessingChoices = 0;
+  let currentBlessingOptions = [];
+  let blessingSelectionOpen = false;
+  let bestScore = 0;
+  let ownedSkins = ['classic'];
+  let equippedSkin = 'classic';
+  let shopOpen = false;
+  let infoPanel = '';
+  let spinReadyAt = 0;
+  let lastSpinResult = '';
+  let challengeState = null;
+  let missionStreak = { count: 0, best: 0, lastCompletedDate: '' };
+  let countdownStartedAt = 0;
+  let countdownLeadSeconds = 0;
+  let lastCountdownActive = false;
+  const countdownGoDurationMs = 850;
 
   try {
     const savedName = localStorage.getItem('snakePlayerName');
     if (savedName) playerName = savedName;
+    coins = Number.parseInt(localStorage.getItem(coinStorageKey) || '0', 10) || 0;
+    bestScore = Number.parseInt(localStorage.getItem(bestScoreStorageKey) || '0', 10) || 0;
+    const savedOwnedSkins = JSON.parse(localStorage.getItem(ownedSkinsStorageKey) || '["classic"]');
+    if (Array.isArray(savedOwnedSkins) && savedOwnedSkins.length) ownedSkins = [...new Set(savedOwnedSkins)];
+    const savedEquippedSkin = localStorage.getItem(equippedSkinStorageKey);
+    if (savedEquippedSkin) equippedSkin = savedEquippedSkin;
+    spinReadyAt = Number.parseInt(localStorage.getItem(spinReadyAtStorageKey) || '0', 10) || 0;
+    const rawChallengeState = localStorage.getItem(challengeStateStorageKey);
+    if (rawChallengeState) challengeState = JSON.parse(rawChallengeState);
+    const rawMissionStreak = localStorage.getItem(missionStreakStorageKey);
+    if (rawMissionStreak) missionStreak = JSON.parse(rawMissionStreak);
+    const savedEconomyVersion = localStorage.getItem(coinEconomyVersionKey);
+    if (savedEconomyVersion !== coinEconomyVersion) {
+      coins = 0;
+      localStorage.setItem(coinStorageKey, '0');
+      localStorage.setItem(coinEconomyVersionKey, coinEconomyVersion);
+    }
   } catch {
     // ignore storage errors
   }
 
+  normalizeMissionStreak();
+  endlessLeaderboard = loadEndlessLeaderboard();
+  ensureChallengeState();
+
   function currentGridSize() {
-    return baseGridSize + (level - 1);
+    return Math.min(maxGridSize, baseGridSize + (level - 1));
   }
 
   function currentCellSize() {
     return canvas.width / currentGridSize();
   }
 
+  function boardGrowthCapLevel() {
+    return maxGridSize - baseGridSize + 1;
+  }
+
   function randomBetween(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
+  }
+
+  function loadEndlessLeaderboard() {
+    try {
+      const raw = localStorage.getItem(leaderboardStorageKey);
+      const parsed = raw ? JSON.parse(raw) : [];
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+
+  function saveEndlessLeaderboard() {
+    try {
+      localStorage.setItem(leaderboardStorageKey, JSON.stringify(endlessLeaderboard));
+    } catch {
+      // ignore storage errors
+    }
+  }
+
+  function saveCoins() {
+    try {
+      localStorage.setItem(coinStorageKey, String(coins));
+    } catch {
+      // ignore storage errors
+    }
+  }
+
+  function addCoins(amount) {
+    if (!amount) return;
+    coins = Math.max(0, coins + amount);
+    saveCoins();
+  }
+
+  function saveBestScore() {
+    try {
+      localStorage.setItem(bestScoreStorageKey, String(bestScore));
+    } catch {
+      // ignore storage errors
+    }
+  }
+
+  function saveOwnedSkins() {
+    try {
+      localStorage.setItem(ownedSkinsStorageKey, JSON.stringify([...new Set(ownedSkins)]));
+    } catch {
+      // ignore storage errors
+    }
+  }
+
+  function saveEquippedSkin() {
+    try {
+      localStorage.setItem(equippedSkinStorageKey, equippedSkin);
+    } catch {
+      // ignore storage errors
+    }
+  }
+
+  function saveSpinReadyAt() {
+    try {
+      localStorage.setItem(spinReadyAtStorageKey, String(spinReadyAt));
+    } catch {
+      // ignore storage errors
+    }
+  }
+
+  function saveChallengeState() {
+    try {
+      localStorage.setItem(challengeStateStorageKey, JSON.stringify(challengeState));
+    } catch {
+      // ignore storage errors
+    }
+  }
+
+  function syncBestScore() {
+    if (score <= bestScore) return;
+    bestScore = score;
+    saveBestScore();
+  }
+
+  function normalizeSkinState() {
+    if (!ownedSkins.includes('classic')) ownedSkins.unshift('classic');
+    if (!ownedSkins.includes(equippedSkin)) equippedSkin = 'classic';
+  }
+
+  function getLocalDateKey() {
+    return new Date().toLocaleDateString('en-CA');
+  }
+
+  function hashString(value) {
+    let hash = 0;
+    for (const char of value) hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
+    return hash;
+  }
+
+  function normalizeMissionStreak() {
+    if (!missionStreak || typeof missionStreak !== 'object') {
+      missionStreak = { count: 0, best: 0, lastCompletedDate: '' };
+      return;
+    }
+    missionStreak.count = Math.max(0, Number.parseInt(missionStreak.count || '0', 10) || 0);
+    missionStreak.best = Math.max(missionStreak.count, Number.parseInt(missionStreak.best || '0', 10) || 0);
+    missionStreak.lastCompletedDate = typeof missionStreak.lastCompletedDate === 'string' ? missionStreak.lastCompletedDate : '';
+  }
+
+  function saveMissionStreak() {
+    try {
+      localStorage.setItem(missionStreakStorageKey, JSON.stringify(missionStreak));
+    } catch {
+      // ignore storage errors
+    }
+  }
+
+  function getPreviousDateKey(dateKey = getLocalDateKey()) {
+    const date = new Date(`${dateKey}T12:00:00`);
+    date.setDate(date.getDate() - 1);
+    return date.toLocaleDateString('en-CA');
+  }
+
+  function formatTimeRemaining(ms) {
+    if (ms <= 0) return 'ready';
+    const totalSeconds = Math.ceil(ms / 1000);
+    const days = Math.floor(totalSeconds / 86400);
+    const hours = Math.floor((totalSeconds % 86400) / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+
+    if (days > 0) return `${days}d ${hours}h`;
+    if (hours > 0) return `${hours}h ${minutes}m`;
+    if (minutes > 0) return `${minutes}m ${seconds}s`;
+    return `${seconds}s`;
+  }
+
+  function timeUntilNextLocalResetLabel() {
+    const now = new Date();
+    const next = new Date(now);
+    next.setHours(24, 0, 0, 0);
+    return formatTimeRemaining(next - now);
+  }
+
+  function missionStreakBonusFor(streakCount) {
+    return 2 + Math.min(6, Math.max(1, streakCount));
+  }
+
+  function nextMissionStreakCount(dateKey = getLocalDateKey()) {
+    normalizeMissionStreak();
+    return missionStreak.lastCompletedDate === getPreviousDateKey(dateKey) ? missionStreak.count + 1 : 1;
+  }
+
+  function maybeCompleteMissionStreak(dateKey = getLocalDateKey()) {
+    normalizeMissionStreak();
+    if (!challengeState || challengeState.date !== dateKey) return null;
+    const missions = challengeState.missions || [];
+    if (!missions.length || !missions.every(mission => mission.claimed)) return null;
+    if (missionStreak.lastCompletedDate === dateKey) return null;
+
+    const streakCount = nextMissionStreakCount(dateKey);
+    const bonus = missionStreakBonusFor(streakCount);
+    missionStreak.count = streakCount;
+    missionStreak.best = Math.max(missionStreak.best, streakCount);
+    missionStreak.lastCompletedDate = dateKey;
+    saveMissionStreak();
+    addCoins(bonus);
+    return { streakCount, bonus };
+  }
+
+  function countdownTotalMs() {
+    return countdownLeadSeconds > 0 ? (countdownLeadSeconds * 1000) + countdownGoDurationMs : 0;
+  }
+
+  function clearCountdown() {
+    countdownStartedAt = 0;
+    countdownLeadSeconds = 0;
+    lastCountdownActive = false;
+  }
+
+  function startCountdown(seconds = 3) {
+    countdownLeadSeconds = seconds;
+    countdownStartedAt = performance.now();
+    accumulator = 0;
+    lastCountdownActive = true;
+  }
+
+  function isCountdownActive(now = performance.now()) {
+    const total = countdownTotalMs();
+    return countdownStartedAt > 0 && total > 0 && now < countdownStartedAt + total;
+  }
+
+  function getCountdownState(now = performance.now()) {
+    if (!isCountdownActive(now)) return null;
+
+    const elapsed = now - countdownStartedAt;
+    const numericWindow = countdownLeadSeconds * 1000;
+    if (elapsed < numericWindow) {
+      const step = Math.floor(elapsed / 1000);
+      return {
+        text: String(Math.max(1, countdownLeadSeconds - step)),
+        phase: (elapsed % 1000) / 1000,
+        go: false
+      };
+    }
+
+    return {
+      text: 'GO!',
+      phase: Math.min(1, (elapsed - numericWindow) / countdownGoDurationMs),
+      go: true
+    };
+  }
+
+  function challengeTemplates() {
+    return [
+      { type: 'apples', title: 'Apple Rush', desc: 'Eat {target} apples', target: [5, 7, 9], reward: [4, 6, 8] },
+      { type: 'rounds', title: 'Round Runner', desc: 'Clear {target} rounds', target: [2, 3, 4], reward: [4, 6, 8] },
+      { type: 'bonus', title: 'Bonus Hunt', desc: 'Eat {target} bonus apples', target: [1, 2, 3], reward: [5, 7, 9] },
+      { type: 'endless', title: 'Endless Push', desc: 'Clear {target} endless rounds', target: [1, 2, 3], reward: [5, 8, 10] }
+    ];
+  }
+
+  function makeChallenge(template, indexSeed = 0, targetBias = 0) {
+    const targetIndex = Math.min(template.target.length - 1, (indexSeed + targetBias) % template.target.length);
+    return {
+      type: template.type,
+      title: template.title,
+      desc: template.desc.replace('{target}', template.target[targetIndex]),
+      target: template.target[targetIndex],
+      reward: template.reward[targetIndex],
+      progress: 0,
+      claimed: false
+    };
+  }
+
+  function ensureChallengeState() {
+    const dateKey = getLocalDateKey();
+    if (challengeState?.date === dateKey) return;
+
+    const templates = challengeTemplates();
+    const seed = hashString(dateKey);
+    const eventTemplate = templates[seed % templates.length];
+    const missions = [];
+    const usedTypes = new Set([eventTemplate.type]);
+    let cursor = 0;
+    while (missions.length < 3) {
+      const template = templates[(seed + cursor + 1) % templates.length];
+      if (!usedTypes.has(template.type)) {
+        usedTypes.add(template.type);
+        missions.push(makeChallenge(template, seed + cursor, missions.length));
+      }
+      cursor += 1;
+      if (cursor > 10) break;
+    }
+
+    challengeState = {
+      date: dateKey,
+      event: makeChallenge(eventTemplate, seed, 1),
+      missions
+    };
+    saveChallengeState();
+  }
+
+  function updateChallengeProgress(type, amount = 1) {
+    ensureChallengeState();
+    if (!challengeState) return;
+    const allChallenges = [challengeState.event, ...challengeState.missions];
+    allChallenges.forEach(challenge => {
+      if (challenge.type !== type || challenge.claimed) return;
+      challenge.progress = Math.min(challenge.target, challenge.progress + amount);
+    });
+    saveChallengeState();
+  }
+
+  function claimChallenge(kind, index = 0) {
+    ensureChallengeState();
+    if (!challengeState) return;
+    const challenge = kind === 'event' ? challengeState.event : challengeState.missions[index];
+    if (!challenge || challenge.claimed || challenge.progress < challenge.target) return;
+    challenge.claimed = true;
+    addCoins(challenge.reward);
+    saveChallengeState();
+    const streakResult = kind === 'mission' ? maybeCompleteMissionStreak(challengeState.date) : null;
+    if (streakResult) {
+      showRealmMessage(`+${challenge.reward} coins • Streak x${streakResult.streakCount} +${streakResult.bonus}`, 2200);
+    } else {
+      showRealmMessage(`+${challenge.reward} coins`, 1400);
+    }
+    updateHud();
+  }
+
+  function spinCooldownLabel() {
+    const remaining = spinReadyAt - Date.now();
+    return remaining <= 0 ? 'ready' : formatTimeRemaining(remaining);
+  }
+
+  function runLuckySpin() {
+    if (Date.now() < spinReadyAt) {
+      showRealmMessage(`Spin in ${spinCooldownLabel()}`, 1400);
+      updateView();
+      return;
+    }
+
+    const roll = Math.random();
+    let rewardText = '';
+    if (roll < 0.45) {
+      addCoins(3);
+      rewardText = '+3 coins';
+    } else if (roll < 0.73) {
+      addCoins(5);
+      rewardText = '+5 coins';
+    } else if (roll < 0.91) {
+      addCoins(8);
+      rewardText = '+8 coins';
+    } else {
+      const locked = snakeSkins.filter(skin => !isSkinOwned(skin.key) && skin.key !== 'classic');
+      if (locked.length) {
+        const unlocked = locked[Math.floor(Math.random() * locked.length)];
+        ownedSkins.push(unlocked.key);
+        equippedSkin = unlocked.key;
+        saveOwnedSkins();
+        saveEquippedSkin();
+        rewardText = `${unlocked.name} skin`;
+      } else {
+        addCoins(10);
+        rewardText = '+10 coins';
+      }
+    }
+
+    spinReadyAt = Date.now() + (4 * 60 * 60 * 1000);
+    saveSpinReadyAt();
+    lastSpinResult = rewardText;
+    showRealmMessage(`Lucky Spin: ${rewardText}`, 1800);
+    updateHud();
+  }
+
+  function isSkinOwned(key) {
+    return ownedSkins.includes(key);
+  }
+
+  function getActiveSkin() {
+    normalizeSkinState();
+    return snakeSkins.find(skin => skin.key === equippedSkin) || snakeSkins[0];
+  }
+
+  function renderShop() {
+    normalizeSkinState();
+    if (shopCoinLabel) shopCoinLabel.textContent = String(coins);
+    if (!shopItemsEl) return;
+
+    shopItemsEl.innerHTML = snakeSkins.map(skin => {
+      const owned = isSkinOwned(skin.key);
+      const active = equippedSkin === skin.key;
+      const canAfford = coins >= skin.price;
+      const priceMarkup = skin.price ? `<span class="skin-price"><img src="coin.svg" class="coin-icon" alt="Coin" /> ${skin.price}</span>` : '<span class="skin-price">Free</span>';
+      const buttonLabel = active ? 'Equipped' : (owned ? 'Equip' : (canAfford ? 'Buy skin' : `Need ${skin.price - coins}`));
+      const buttonClass = active ? 'skin-action owned' : (owned ? 'skin-action equip' : 'skin-action');
+
+      return `
+        <article class="skin-card${active ? ' active' : ''}">
+          <div class="skin-preview" style="--skin-bg-a:${skin.bgA};--skin-bg-b:${skin.bgB};--skin-body:${skin.body};--skin-head:${skin.head};--skin-accent:${skin.accent};"></div>
+          <div class="skin-meta">
+            <div>
+              <p class="skin-name">${skin.emoji} ${skin.name}</p>
+            </div>
+            ${priceMarkup}
+          </div>
+          <p class="skin-desc">${skin.desc}</p>
+          <button class="${buttonClass}" type="button" data-skin="${skin.key}">${buttonLabel}</button>
+        </article>
+      `;
+    }).join('');
+  }
+
+  function toggleShop(force) {
+    if (currentScreen !== 'home') return;
+    infoPanel = '';
+    shopOpen = typeof force === 'boolean' ? force : !shopOpen;
+    renderShop();
+    updateView();
+  }
+
+  function openInfoPanel(kind) {
+    if (currentScreen !== 'home') return;
+    shopOpen = false;
+    infoPanel = kind;
+    updateView();
+  }
+
+  function closeInfoPanel() {
+    infoPanel = '';
+    updateView();
+  }
+
+  function renderInfoPanel() {
+    ensureChallengeState();
+    if (!infoTitleEl || !infoSubtitleEl || !infoContentEl) return;
+
+    if (infoPanel === 'leaderboard') {
+      infoTitleEl.textContent = 'endless leaderboard';
+      infoSubtitleEl.textContent = 'Top scores from your best endless runs.';
+      const board = endlessLeaderboard.slice(0, 5);
+      infoContentEl.innerHTML = board.length
+        ? board.map((entry, index) => `<div class="info-card"><strong>#${index + 1} ${entry.name}</strong>Score ${entry.score} • Level ${entry.level} • Round ${entry.round}</div>`).join('')
+        : '<div class="info-card"><strong>No scores yet</strong>Finish an endless run to start filling the board.</div>';
+      return;
+    }
+
+    if (infoPanel === 'guide') {
+      infoTitleEl.textContent = 'quick guide';
+      infoSubtitleEl.textContent = 'A few mobile-game style tips before you jump in.';
+      infoContentEl.innerHTML = [
+        '<div class="info-card"><strong>Controls</strong>Use arrow keys, WASD, or the touch pad on mobile.</div>',
+        '<div class="info-card"><strong>Lucky Spin</strong>Spin every 4 hours for coins or a surprise skin.</div>',
+        '<div class="info-card"><strong>Progress</strong>Events and missions track automatically while you play.</div>'
+      ].join('');
+      return;
+    }
+
+    if (infoPanel === 'spin') {
+      infoTitleEl.textContent = 'lucky spin';
+      infoSubtitleEl.textContent = 'A real cooldown-based spin for coins and rare skins.';
+      const ready = Date.now() >= spinReadyAt;
+      infoContentEl.innerHTML = `
+        <div class="info-card">
+          <strong>Wheel status</strong>
+          <span class="info-tag">${ready ? 'Ready now' : `Next spin in ${spinCooldownLabel()}`}</span>
+          <button class="info-action" type="button" data-action="spin" ${ready ? '' : 'disabled'}>${ready ? 'Spin now' : 'Cooling down'}</button>
+          ${lastSpinResult ? `<div class="info-progress"><span style="width:100%"></span></div><div style="margin-top:10px">Last result: ${lastSpinResult}</div>` : ''}
+        </div>
+      `;
+      return;
+    }
+
+    if (infoPanel === 'events') {
+      const event = challengeState?.event;
+      if (!event) return;
+      const percent = Math.min(100, Math.round((event.progress / event.target) * 100));
+      const canClaim = event.progress >= event.target && !event.claimed;
+      infoTitleEl.textContent = 'daily event';
+      infoSubtitleEl.textContent = `One featured challenge that refreshes each day. Reset in ${timeUntilNextLocalResetLabel()}.`;
+      infoContentEl.innerHTML = `
+        <div class="info-card">
+          <strong>${event.title}</strong>
+          <div>${event.desc}</div>
+          <div class="info-progress"><span style="width:${percent}%"></span></div>
+          <div style="margin-top:10px">${event.progress}/${event.target} complete • Reward ${event.reward} coins</div>
+          <button class="info-action ${event.claimed ? 'alt' : ''}" type="button" data-action="claim-event" ${canClaim ? '' : 'disabled'}>${event.claimed ? 'Claimed' : (canClaim ? 'Claim reward' : 'Keep going')}</button>
+        </div>
+      `;
+      return;
+    }
+
+    if (infoPanel === 'missions') {
+      const missions = challengeState?.missions || [];
+      const streakLockedToday = missionStreak.lastCompletedDate === (challengeState?.date || getLocalDateKey());
+      const streakPreview = streakLockedToday ? Math.max(1, missionStreak.count) : nextMissionStreakCount(challengeState?.date || getLocalDateKey());
+      const streakBonus = missionStreakBonusFor(streakPreview);
+      infoTitleEl.textContent = 'missions';
+      infoSubtitleEl.textContent = `Three working daily tasks that track progress automatically. Reset in ${timeUntilNextLocalResetLabel()}.`;
+      infoContentEl.innerHTML = `
+        <div class="info-card">
+          <strong>Mission streak</strong>
+          <div>${streakLockedToday ? `Today's streak is locked in at x${missionStreak.count}.` : `Claim all 3 missions today for +${streakBonus} bonus coins.`}</div>
+          <div style="margin-top:10px">Current streak ${missionStreak.count} • Best ${missionStreak.best}</div>
+        </div>
+        <div class="info-grid">${missions.map((mission, index) => {
+          const percent = Math.min(100, Math.round((mission.progress / mission.target) * 100));
+          const canClaim = mission.progress >= mission.target && !mission.claimed;
+          return `
+            <div class="info-card">
+              <strong>${mission.title}</strong>
+              <div>${mission.desc}</div>
+              <div class="info-progress"><span style="width:${percent}%"></span></div>
+              <div style="margin-top:10px">${mission.progress}/${mission.target} complete • Reward ${mission.reward} coins</div>
+              <button class="info-action ${mission.claimed ? 'alt' : ''}" type="button" data-action="claim-mission" data-index="${index}" ${canClaim ? '' : 'disabled'}>${mission.claimed ? 'Claimed' : (canClaim ? 'Claim reward' : 'In progress')}</button>
+            </div>
+          `;
+        }).join('')}</div>
+      `;
+      return;
+    }
+
+    infoTitleEl.textContent = 'panel';
+    infoSubtitleEl.textContent = 'Extra game info.';
+    infoContentEl.innerHTML = '';
+  }
+
+  function handleShopAction(key) {
+    const skin = snakeSkins.find(item => item.key === key);
+    if (!skin) return;
+
+    if (!isSkinOwned(key)) {
+      if (coins < skin.price) {
+        showRealmMessage(`Need ${skin.price - coins} more coins`, 1400);
+        updateView();
+        return;
+      }
+      coins -= skin.price;
+      saveCoins();
+      ownedSkins.push(key);
+      saveOwnedSkins();
+      equippedSkin = key;
+      saveEquippedSkin();
+      showRealmMessage(`${skin.name} unlocked`, 1600);
+    } else if (equippedSkin !== key) {
+      equippedSkin = key;
+      saveEquippedSkin();
+      showRealmMessage(`${skin.name} equipped`, 1200);
+    }
+
+    renderShop();
+    updateHud();
+  }
+
+  function toggleFullscreen() {
+    const target = currentScreen === 'game' ? gamePage : cardWrap;
+    if (!document.fullscreenElement) {
+      target?.requestFullscreen?.();
+    } else {
+      document.exitFullscreen?.();
+    }
+  }
+
+  function getDailyRewardState() {
+    try {
+      const lastClaim = Number.parseInt(localStorage.getItem(dailyRewardStorageKey) || '0', 10) || 0;
+      const cooldownMs = 24 * 60 * 60 * 1000;
+      const remaining = lastClaim + cooldownMs - Date.now();
+      if (remaining <= 0) return { ready: true, label: 'ready', shortLabel: 'Ready', remaining: 0 };
+      const label = formatTimeRemaining(remaining);
+      return { ready: false, label, shortLabel: label, remaining };
+    } catch {
+      return { ready: true, label: 'ready', shortLabel: 'Ready', remaining: 0 };
+    }
+  }
+
+  function claimDailyReward() {
+    const rewardState = getDailyRewardState();
+    if (!rewardState.ready) {
+      showRealmMessage(`Daily reward in ${rewardState.label}`, 1400);
+      updateView();
+      return;
+    }
+
+    addCoins(8);
+    try {
+      localStorage.setItem(dailyRewardStorageKey, String(Date.now()));
+    } catch {
+      // ignore storage errors
+    }
+    showRealmMessage('+8 daily coins', 1800);
+    updateHud();
+    updateView();
+  }
+
+  function togglePause(force) {
+    if ((blessingSelectionOpen || isCountdownActive()) && force !== false) return;
+    paused = typeof force === 'boolean' ? force : !paused;
+    if (pauseBtn) pauseBtn.textContent = paused ? 'Resume' : 'Pause';
+    updateHud();
+  }
+
+  function markCheatUsed() {
+    cheatsUsedThisRun = true;
+  }
+
+  function recordEndlessLeaderboardResult() {
+    if (!endlessMode || leaderboardSavedThisLife) return;
+
+    leaderboardSavedThisLife = true;
+    const qualifies = !cheatsUsedThisRun || leaderboardAbuseMode;
+    const result = {
+      qualifies,
+      cheated: cheatsUsedThisRun,
+      override: leaderboardAbuseMode,
+      rank: null,
+      board: endlessLeaderboard.slice(0, 5)
+    };
+
+    if (qualifies) {
+      const entry = {
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        name: (playerName || 'Player').slice(0, 18),
+        score,
+        level,
+        round,
+        cheated: cheatsUsedThisRun,
+        override: leaderboardAbuseMode,
+        createdAt: new Date().toISOString()
+      };
+
+      endlessLeaderboard = [...endlessLeaderboard, entry]
+        .sort((a, b) => (b.score - a.score) || (b.level - a.level) || (b.round - a.round))
+        .slice(0, 10);
+
+      saveEndlessLeaderboard();
+      const rank = endlessLeaderboard.findIndex(item => item.id === entry.id) + 1;
+      result.rank = rank > 0 ? rank : null;
+      result.board = endlessLeaderboard.slice(0, 5);
+    }
+
+    lastLeaderboardResult = result;
+  }
+
+  function triggerGameOver(message = 'Game Over') {
+    if (gameOver) return;
+    gameOver = true;
+    paused = false;
+    blessingSelectionOpen = false;
+    clearCountdown();
+    if (message) showRealmMessage(message, 1800);
+    recordEndlessLeaderboardResult();
+    updateHud();
+  }
+
+  function buildBlessingChoices(count = 3) {
+    const pool = [
+      { key: 'vigor', icon: '🛡️', title: 'Heavenly Vigor', desc: '+2 max HP and a heal burst', tag: 'HP' },
+      { key: 'reflex', icon: '⚡', title: 'Seraph Reflex', desc: 'Move faster every tick', tag: 'SPD' },
+      { key: 'luck', icon: '🍀', title: 'Lucky Halo', desc: 'Better heals and bonus XP gain', tag: 'LUCK' },
+      { key: 'shield', icon: '✨', title: 'Guardian Shield', desc: 'Reduce incoming damage by 1', tag: 'DEF' },
+      { key: 'bounty', icon: '💰', title: 'Golden Bounty', desc: 'Slightly better coin drops from apples', tag: 'COIN' },
+      { key: 'smite', icon: '☄️', title: 'Smite Pulse', desc: 'Blast nearby threats right now', tag: 'AOE' }
+    ];
+    return pool.sort(() => Math.random() - 0.5).slice(0, count);
+  }
+
+  function renderBlessingChoices() {
+    if (!abilityChoicesEl) return;
+    abilityChoicesEl.innerHTML = '';
+
+    currentBlessingOptions.forEach((option, index) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'ability-card';
+      button.innerHTML = `
+        <span class="ability-icon">${option.icon}</span>
+        <span class="ability-title">${index + 1}. ${option.title}</span>
+        <span class="ability-desc">${option.desc}</span>
+        <span class="ability-tag">${option.tag}</span>
+      `;
+      button.addEventListener('click', () => chooseBlessing(option.key));
+      abilityChoicesEl.appendChild(button);
+    });
+  }
+
+  function openBlessingSelection() {
+    if (!angelRealm || pendingBlessingChoices <= 0 || blessingSelectionOpen) return;
+    currentBlessingOptions = buildBlessingChoices(3);
+    blessingSelectionOpen = true;
+    paused = true;
+    accumulator = 0;
+    renderBlessingChoices();
+    updateHud();
+  }
+
+  function applyBlessing(key) {
+    switch (key) {
+      case 'vigor':
+        abilities.vigor += 1;
+        playerHealth = Math.min(maxHealth + 2, playerHealth + 2);
+        break;
+      case 'reflex':
+        abilities.reflex += 1;
+        break;
+      case 'luck':
+        abilities.luck += 1;
+        addCoins(2);
+        xp += 3;
+        break;
+      case 'shield':
+        abilities.shield += 1;
+        playerHealth = Math.min(maxHealth, playerHealth + 1);
+        break;
+      case 'bounty':
+        abilities.bounty += 1;
+        addCoins(3);
+        score += 5;
+        break;
+      case 'smite':
+        obstacles.splice(0, Math.min(3, obstacles.length));
+        angels.splice(0, Math.min(2, angels.length));
+        generalAngels.splice(0, Math.min(1, generalAngels.length));
+        if (snake[0]) emitParticles(snake[0].x, snake[0].y, 20, ['rgba(255,255,255,0.98)', 'rgba(255,226,105,0.95)']);
+        score += 12;
+        break;
+      default:
+        break;
+    }
+
+    recalcStats();
+    tickMs = getSpeedForState();
+  }
+
+  function chooseBlessing(key) {
+    const picked = currentBlessingOptions.find(option => option.key === key);
+    if (!picked) return;
+
+    applyBlessing(key);
+    pendingBlessingChoices = Math.max(0, pendingBlessingChoices - 1);
+    currentBlessingOptions = [];
+    blessingSelectionOpen = false;
+    paused = false;
+    accumulator = 0;
+    showRealmMessage(`${picked.title} chosen`, 1600);
+    updateHud();
+
+    if (pendingBlessingChoices > 0) openBlessingSelection();
   }
 
   function lerp(a, b, t) {
@@ -133,10 +948,94 @@
     if (directionQueue.length > 3) directionQueue.shift();
   }
 
+  function setDockLabel(button, fullLabel, visibleLabel = fullLabel) {
+    if (!button) return;
+    button.dataset.label = fullLabel;
+    button.title = fullLabel;
+    button.setAttribute('aria-label', fullLabel);
+    const textEl = button.querySelector('.dock-text');
+    if (textEl) textEl.textContent = visibleLabel;
+  }
+
+  function setDockBadge(button, value = '') {
+    if (!button) return;
+    if (value === '' || value === null || value === undefined) {
+      button.removeAttribute('data-badge');
+      return;
+    }
+    button.dataset.badge = String(value);
+  }
+
   function updateView() {
     const inCheatRoom = window.location.hash === '#cheats';
+    const onHome = currentScreen === 'home';
+    if (!onHome) {
+      shopOpen = false;
+      infoPanel = '';
+    }
+
     if (playerNameLabel) playerNameLabel.textContent = playerName;
-    if (homePage) homePage.classList.toggle('hidden', currentScreen !== 'home');
+    if (coinBankLabel) coinBankLabel.textContent = String(coins);
+    if (shopCoinLabel) shopCoinLabel.textContent = String(coins);
+    if (gameModeLabel) {
+      gameModeLabel.textContent = angelRealm ? 'Angel Realm' : (endlessMode ? 'Endless Run' : 'Normal Run');
+    }
+    if (gameOverTitleEl) {
+      gameOverTitleEl.textContent = endlessMode ? 'Endless Run Over' : 'Game Over';
+    }
+    setDockLabel(leaderboardBtn, 'Leaderboard', 'Ranks');
+    setDockBadge(leaderboardBtn);
+    setDockLabel(guideBtn, 'Guide', 'Guide');
+    setDockBadge(guideBtn);
+    const spinReady = Date.now() >= spinReadyAt;
+    setDockLabel(spinBtn, spinReady ? 'Lucky Spin' : `Spin ${spinCooldownLabel()}`, 'Spin');
+    if (spinBtn) spinBtn.classList.toggle('reward-ready', spinReady);
+    setDockBadge(spinBtn, spinReady ? '!' : '');
+    setDockLabel(changeNameBtn, 'Change name', 'Name');
+    setDockBadge(changeNameBtn);
+    const eventReady = challengeState?.event && challengeState.event.progress >= challengeState.event.target && !challengeState.event.claimed;
+    const missionReadyCount = (challengeState?.missions || []).filter(mission => mission.progress >= mission.target && !mission.claimed).length;
+    const missionBadge = missionReadyCount ? missionReadyCount : (missionStreak.count > 0 ? `S${missionStreak.count}` : '');
+    const missionLabel = missionReadyCount
+      ? `Missions ${missionReadyCount} ready • Streak ${missionStreak.count}`
+      : (missionStreak.count > 0 ? `Missions • Streak ${missionStreak.count}` : 'Missions');
+    setDockLabel(eventsBtn, eventReady ? 'Event Ready' : 'Events', 'Events');
+    if (eventsBtn) eventsBtn.classList.toggle('reward-ready', !!eventReady);
+    setDockBadge(eventsBtn, eventReady ? '!' : '');
+    setDockLabel(missionsBtn, missionLabel, 'Tasks');
+    if (missionsBtn) missionsBtn.classList.toggle('reward-ready', missionReadyCount > 0);
+    setDockBadge(missionsBtn, missionBadge);
+    setDockLabel(shopBtn, 'Shop', 'Shop');
+    setDockBadge(shopBtn);
+    if (dailyRewardBtn) {
+      const rewardState = getDailyRewardState();
+      dailyRewardBtn.disabled = false;
+      dailyRewardBtn.classList.toggle('reward-ready', rewardState.ready);
+      setDockLabel(dailyRewardBtn, rewardState.ready ? 'Daily reward ready' : `Daily reward in ${rewardState.label}`, rewardState.ready ? 'Ready' : rewardState.shortLabel);
+      setDockBadge(dailyRewardBtn, rewardState.ready ? '!' : '');
+    }
+    if (fullscreenBtn) {
+      const label = document.fullscreenElement ? 'Exit fullscreen' : 'Fullscreen';
+      setDockLabel(fullscreenBtn, label, 'Full');
+      setDockBadge(fullscreenBtn);
+    }
+    if (pauseBtn) {
+      pauseBtn.textContent = paused && !blessingSelectionOpen ? 'Resume' : 'Pause';
+      pauseBtn.disabled = blessingSelectionOpen || gameOver || isCountdownActive();
+    }
+    if (realmXpWrap) {
+      const showRealmXp = currentScreen === 'game' && !inCheatRoom && angelRealm && !gameOver;
+      realmXpWrap.classList.toggle('hidden', !showRealmXp);
+    }
+
+    renderShop();
+    renderInfoPanel();
+
+    if (infoOverlay) infoOverlay.classList.toggle('hidden', !infoPanel || !onHome);
+    if (shopOverlay) shopOverlay.classList.toggle('hidden', !shopOpen || !onHome);
+    if (abilityOverlay) abilityOverlay.classList.toggle('hidden', !blessingSelectionOpen || currentScreen !== 'game' || inCheatRoom);
+    if (gameOverOverlay) gameOverOverlay.classList.toggle('hidden', currentScreen !== 'game' || inCheatRoom || !gameOver);
+    if (homePage) homePage.classList.toggle('hidden', !onHome);
     gamePage.classList.toggle('hidden', currentScreen !== 'game' || inCheatRoom);
     cheatPage.classList.toggle('hidden', currentScreen !== 'game' || !inCheatRoom);
   }
@@ -153,6 +1052,7 @@
   function startMode(mode = 'normal') {
     endlessMode = mode === 'endless';
     currentScreen = 'game';
+    shopOpen = false;
     window.location.hash = '';
     resetGame();
     showRealmMessage(endlessMode ? 'Endless mode' : 'Normal mode', 1200);
@@ -161,7 +1061,10 @@
 
   function returnHome() {
     currentScreen = 'home';
+    shopOpen = false;
     window.location.hash = '';
+    clearCountdown();
+    togglePause(false);
     updateView();
   }
 
@@ -191,18 +1094,23 @@
 
   function gainXp(amount) {
     if (amount <= 0 || !angelRealm) return;
-    const earned = jackpotMode && jackpotHud.mode === '%XP' ? Math.ceil(amount * 1.5) : amount;
+    const earnedBase = jackpotMode && jackpotHud.mode === '%XP' ? Math.ceil(amount * 1.5) : amount;
+    const earned = earnedBase + abilities.luck;
     xp += earned;
+
+    let leveledUp = false;
     while (xp >= xpLevel * 25) {
       xp -= xpLevel * 25;
       xpLevel += 1;
-      if (xpLevel % 3 === 1) abilities.vigor += 1;
-      else if (xpLevel % 3 === 2) abilities.reflex += 1;
-      else abilities.luck += 1;
-      recalcStats();
-      playerHealth = Math.min(maxHealth, playerHealth + 2);
+      pendingBlessingChoices += 1;
+      leveledUp = true;
+    }
+
+    if (leveledUp) {
+      playerHealth = Math.min(maxHealth, playerHealth + 1 + abilities.luck);
       tickMs = getSpeedForState();
-      showRealmMessage(`Level up! Power ${xpLevel}`, 1800);
+      showRealmMessage('Level up! Choose a blessing', 2200);
+      openBlessingSelection();
     }
   }
 
@@ -225,31 +1133,36 @@
 
   function applyDamage(amount, hitX, hitY) {
     if (invincible || amount <= 0) return;
-    playerHealth = Math.max(0, playerHealth - amount);
+    const reducedAmount = Math.max(1, amount - abilities.shield);
+    playerHealth = Math.max(0, playerHealth - reducedAmount);
     emitParticles(hitX, hitY, 10, ['rgba(255,255,255,0.95)', 'rgba(255,225,120,0.9)']);
     if (playerHealth <= 0) {
-      gameOver = true;
-      showRealmMessage('Fallen in the Angel Realm', 1800);
+      triggerGameOver('Fallen in the Angel Realm');
     }
     updateHud();
   }
 
   function enterAngelRealm() {
+    markCheatUsed();
     currentScreen = 'game';
     angelRealm = true;
     xp = 0;
     xpLevel = 1;
-    abilities = { vigor: 0, reflex: 0, luck: 0 };
+    abilities = { vigor: 0, reflex: 0, luck: 0, shield: 0, bounty: 0 };
     recalcStats();
     playerHealth = maxHealth;
     showRealmMessage('Angel Realm awakened', 2200);
-    resetGame();
+    resetGame(true);
     updateView();
   }
 
   function getSpeedForState() {
-    const base = Math.max(10, 160 - (round - 1) * 2 - (level - 1) * 5 - abilities.reflex * 6 - (angelRealm ? 8 : 0));
-    return Math.max(4, Math.floor(base * Math.pow(0.78, speedLevel)));
+    const sizeGrowth = currentGridSize() - baseGridSize;
+    const mapSpeedBoost = sizeGrowth * 4;
+    const roundSpeedBoost = (round - 1) * 2;
+    const levelSpeedBoost = (level - 1) * 2;
+    const naturalTick = Math.max(minMapTickMs, baseTickMs - mapSpeedBoost - roundSpeedBoost - levelSpeedBoost - abilities.reflex * 6 - (angelRealm ? 8 : 0));
+    return Math.max(minAbsoluteTickMs, Math.floor(naturalTick * Math.pow(0.84, speedLevel)));
   }
 
   function obstacleTargetForState() {
@@ -470,11 +1383,12 @@
     tongueVisibleUntil = 0;
   }
 
-  function resetGame() {
+  function resetGame(preserveCheatState = false, useCountdown = currentScreen === 'game') {
     score = 0;
     round = 1;
     level = 1;
     gameOver = false;
+    paused = false;
     invincible = false;
     autoAim = false;
     speedLevel = 0;
@@ -491,18 +1405,33 @@
     particles = [];
     trackingLasers = [];
     skyBeams = [];
+    comboCount = 0;
+    comboTimer = 0;
+    pendingBlessingChoices = 0;
+    currentBlessingOptions = [];
+    blessingSelectionOpen = false;
+    leaderboardSavedThisLife = false;
+    lastLeaderboardResult = null;
+    if (!preserveCheatState) {
+      leaderboardAbuseMode = false;
+      cheatsUsedThisRun = !!jackpotMode;
+    }
     recalcStats();
     playerHealth = maxHealth;
     setupLevel(true);
     tickMs = getSpeedForState();
     accumulator = 0;
     scheduleTongue();
+    if (useCountdown) startCountdown();
+    else clearCountdown();
     updateHud();
   }
 
   function reviveGame() {
     if (!gameOver) return;
     gameOver = false;
+    leaderboardSavedThisLife = false;
+    lastLeaderboardResult = null;
     const center = Math.floor(currentGridSize() / 2);
     snake = [{ x: center, y: center }, { x: Math.max(0, center - 1), y: center }];
     prevSnake = snake.map(seg => ({ ...seg }));
@@ -515,6 +1444,7 @@
     skyBeams = [];
     playerHealth = Math.max(1, Math.ceil(maxHealth * 0.6));
     scheduleTongue();
+    startCountdown();
     updateHud();
   }
 
@@ -539,6 +1469,10 @@
     if (angelRealm) tags.push('angel realm');
     if (boss?.active) tags.push('boss');
     if (jackpotMode) tags.push('jackpot');
+    if (leaderboardAbuseMode) tags.push('lb override');
+    if (blessingSelectionOpen) tags.push('choose blessing');
+    else if (isCountdownActive()) tags.push('starting');
+    else if (paused) tags.push('paused');
     if (invincible) tags.push('invincible');
     if (autoAim) tags.push('aimbot');
     if (speedLevel > 0) tags.push(`fast x${speedLevel}`);
@@ -549,14 +1483,23 @@
       tags.push('game over');
     }
 
-    levelEl.textContent = String(level);
-    roundEl.textContent = String(round);
-    scoreEl.textContent = String(score);
+    syncBestScore();
+    if (levelEl) levelEl.textContent = String(level);
+    if (roundEl) roundEl.textContent = String(round);
+    if (scoreEl) scoreEl.textContent = String(score);
+    if (bestScoreEl) bestScoreEl.textContent = String(bestScore);
+    if (coinsEl) coinsEl.textContent = String(coins);
+    if (comboEl) comboEl.textContent = comboCount > 1 ? `x${comboCount}` : 'x1';
+    if (mapSizeEl) {
+      const size = currentGridSize();
+      mapSizeEl.textContent = `${size}x${size}`;
+    }
     if (levelCapEl) levelCapEl.textContent = Number.isFinite(currentMaxLevels()) ? String(currentMaxLevels()) : '∞';
     if (roundCapEl) roundCapEl.textContent = String(currentMaxRounds());
     if (healthEl) healthEl.textContent = `${playerHealth}/${maxHealth}`;
-    if (xpEl) xpEl.textContent = angelRealm ? `${xp} • Lv ${xpLevel}` : 'realm only';
-    statusEl.textContent = tags.join(' + ');
+    if (xpEl) xpEl.textContent = angelRealm ? `${xp} • Lv ${xpLevel}` : '';
+    if (statusEl) statusEl.textContent = tags.join(' + ');
+    updateView();
   }
 
   function scheduleSpeedCommandParse() {
@@ -567,6 +1510,7 @@
       if (bufferString === lastProcessedSpeedBuffer) return;
 
       if (/zoom\s*normal$/.test(bufferString) || /unzoom\s*normal$/.test(bufferString)) {
+        markCheatUsed();
         speedLevel = 0;
         tickMs = getSpeedForState();
         lastProcessedSpeedBuffer = bufferString;
@@ -578,6 +1522,7 @@
       const unzoomMatch = bufferString.match(/unzoom\s*(\d+)?$/);
 
       if (zoomMatch) {
+        markCheatUsed();
         const typedValue = zoomMatch[1] ? Number.parseInt(zoomMatch[1], 10) : 1;
         const amount = Math.max(1, typedValue || 1);
         speedLevel += amount;
@@ -585,6 +1530,7 @@
         lastProcessedSpeedBuffer = bufferString;
         updateHud();
       } else if (unzoomMatch) {
+        markCheatUsed();
         const typedValue = unzoomMatch[1] ? Number.parseInt(unzoomMatch[1], 10) : 1;
         const amount = Math.max(1, typedValue || 1);
         speedLevel -= amount;
@@ -601,12 +1547,17 @@
 
     if (round < maxRoundCount) {
       round += 1;
+      updateChallengeProgress('rounds', 1);
+      if (endlessMode) updateChallengeProgress('endless', 1);
       obstacles = [];
       spawnFoodIfMissing();
       ensureObstaclesForRound();
       spawnAngelEntities();
     } else if (level < maxLevelCount) {
       level += 1;
+      if (level === boardGrowthCapLevel() + 1) {
+        showRealmMessage('Board size cap reached', 1800);
+      }
       round = 1;
       activePortals = [];
       angels = [];
@@ -1005,8 +1956,7 @@
           createPortalPair({ x: from.x, y: grid - 0.82 }, { x: from.x, y: -0.18 });
         }
       } else {
-        gameOver = true;
-        updateHud();
+        triggerGameOver(endlessMode ? 'Endless run over' : 'Wall crash');
         return;
       }
     }
@@ -1019,15 +1969,6 @@
     const generalIndex = generalAngels.findIndex(enemy => enemy.x === newHead.x && enemy.y === newHead.y);
     const grabbedHeal = healOrb && healOrb.x === newHead.x && healOrb.y === newHead.y;
     const hitAltar = altar && altar.x === newHead.x && altar.y === newHead.y;
-    const bodyToCheck = ateMainFood || ateBonusApple ? snake : snake.slice(0, -1);
-    const hitsSelf = bodyToCheck.some(seg => seg.x === newHead.x && seg.y === newHead.y);
-
-    if (!invincible && hitsSelf) {
-      gameOver = true;
-      updateHud();
-      return;
-    }
-
     if (obstacleIndex !== -1) {
       obstacles.splice(obstacleIndex, 1);
       if (invincible) {
@@ -1035,528 +1976,13 @@
       } else {
         applyDamage(3, newHead.x, newHead.y);
         if (gameOver) {
-          updateHud();
-          return;
-        }
-      }
-    }
-
-    if (angelIndex !== -1) {
-      angels.splice(angelIndex, 1);
-      score += 15;
-      gainXp(10);
-      emitParticles(newHead.x, newHead.y, 10);
-    }
-
-    if (generalIndex !== -1) {
-      generalAngels.splice(generalIndex, 1);
-      score += 25;
-      gainXp(16);
-      emitParticles(newHead.x, newHead.y, 12, ['rgba(255,255,255,0.98)', 'rgba(255,228,120,0.95)']);
-    }
-
-    if (grabbedHeal) {
-      healOrb = null;
-      playerHealth = Math.min(maxHealth, playerHealth + 2 + abilities.luck);
-      showRealmMessage('Holy heal', 1200);
-    }
-
-    if (hitAltar && boss?.active) {
-      altar = null;
-      boss.hp = Math.max(0, boss.hp - 5);
-      score += 30;
-      gainXp(20);
-      emitParticles(newHead.x, newHead.y, 16, ['rgba(255,255,255,0.98)', 'rgba(255,235,150,0.95)']);
-      if (boss.hp <= 0) {
-        boss = null;
-        angelRealm = false;
-        projectiles = [];
-        trackingLasers = [];
-        skyBeams = [];
-        grenades = [];
-        altar = null;
-        healOrb = null;
-        showRealmMessage('Arch Angle defeated!', 2600);
-      }
-    }
-
-    snake.unshift(newHead);
-
-    if (ateMainFood) {
-      score += 10;
-      food = null;
-      advanceProgress();
-    } else if (ateBonusApple) {
-      score += 5;
-      bonusApples.splice(bonusIndex, 1);
-    } else {
-      snake.pop();
-    }
-
-    spawnFoodIfMissing();
-    updateAngelRealmThreats();
-    updateHud();
-  }
-
-  function drawRoundedCell(x, y, color, radius = 8, scale = 1, glowColor = null) {
-    const size = currentCellSize();
-    const scaled = (size - 8) * scale;
-    const offset = ((size - 8) - scaled) / 2;
-    const px = x * size;
-    const py = y * size;
-
-    if (glowColor) {
-      ctx.save();
-      ctx.shadowBlur = 10;
-      ctx.shadowColor = glowColor;
-    }
-
-    ctx.fillStyle = color;
-    roundedRectPath(px + 4 + offset, py + 4 + offset, scaled, scaled, radius);
-    ctx.fill();
-
-    if (glowColor) ctx.restore();
-  }
-
-  function drawFoodCell(item, now, color, glow) {
-    const pulse = 0.88 + Math.sin(now * 0.012 + item.x + item.y) * 0.08;
-    drawRoundedCell(item.x, item.y, color, 12, pulse, glow);
-  }
-
-  function drawHead(seg, now = performance.now(), drawX = seg.x, drawY = seg.y) {
-    const size = currentCellSize();
-    const breathe = 0.98 + Math.sin(now * 0.01) * 0.02;
-    const bodySize = (size - 8) * breathe;
-    const offset = ((size - 8) - bodySize) / 2;
-    const px = drawX * size + 4 + offset;
-    const py = drawY * size + 4 + offset;
-    const headColor = jackpotMode ? '#ffd54f' : (invincible ? '#ffd84d' : '#5ef38c');
-
-    ctx.fillStyle = headColor;
-    roundedRectPath(px, py, bodySize, bodySize, 10);
-    ctx.fill();
-
-    ctx.fillStyle = '#111';
-    let eye1x = px + bodySize * 0.68;
-    let eye1y = py + bodySize * 0.28;
-    let eye2x = px + bodySize * 0.68;
-    let eye2y = py + bodySize * 0.72;
-    let mouthFromX = px + bodySize * 0.84;
-    let mouthFromY = py + bodySize * 0.38;
-    let mouthToX = px + bodySize * 0.84;
-    let mouthToY = py + bodySize * 0.62;
-    let tongueFromX = px + bodySize * 0.9;
-    let tongueFromY = py + bodySize * 0.5;
-    let tongueToX = px + bodySize * 1.15;
-    let tongueToY = py + bodySize * 0.5;
-
-    if (direction.x === -1) {
-      eye1x = px + bodySize * 0.32; eye1y = py + bodySize * 0.28;
-      eye2x = px + bodySize * 0.32; eye2y = py + bodySize * 0.72;
-      mouthFromX = px + bodySize * 0.16; mouthToX = px + bodySize * 0.16;
-      tongueFromX = px + bodySize * 0.1; tongueToX = px - bodySize * 0.15;
-    } else if (direction.y === -1) {
-      eye1x = px + bodySize * 0.28; eye1y = py + bodySize * 0.32;
-      eye2x = px + bodySize * 0.72; eye2y = py + bodySize * 0.32;
-      mouthFromX = px + bodySize * 0.38; mouthFromY = py + bodySize * 0.16;
-      mouthToX = px + bodySize * 0.62; mouthToY = py + bodySize * 0.16;
-      tongueFromX = px + bodySize * 0.5; tongueFromY = py + bodySize * 0.1;
-      tongueToX = px + bodySize * 0.5; tongueToY = py - bodySize * 0.15;
-    } else if (direction.y === 1) {
-      eye1x = px + bodySize * 0.28; eye1y = py + bodySize * 0.68;
-      eye2x = px + bodySize * 0.72; eye2y = py + bodySize * 0.68;
-      mouthFromX = px + bodySize * 0.38; mouthFromY = py + bodySize * 0.84;
-      mouthToX = px + bodySize * 0.62; mouthToY = py + bodySize * 0.84;
-      tongueFromX = px + bodySize * 0.5; tongueFromY = py + bodySize * 0.9;
-      tongueToX = px + bodySize * 0.5; tongueToY = py + bodySize * 1.15;
-    }
-
-    ctx.beginPath();
-    ctx.arc(eye1x, eye1y, Math.max(2, bodySize * 0.06), 0, Math.PI * 2);
-    ctx.arc(eye2x, eye2y, Math.max(2, bodySize * 0.06), 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.strokeStyle = '#111';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(mouthFromX, mouthFromY);
-    ctx.lineTo(mouthToX, mouthToY);
-    ctx.stroke();
-
-    if (now >= nextTongueAt) {
-      tongueVisibleUntil = now + 450;
-      nextTongueAt = now + randomBetween(5000, 12000);
-    }
-
-    if (now < tongueVisibleUntil) {
-      ctx.strokeStyle = '#ff4b6e';
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.moveTo(tongueFromX, tongueFromY);
-      ctx.lineTo(tongueToX, tongueToY);
-      ctx.stroke();
-    }
-  }
-
-  function drawAngelEnemy(enemy, type = 'angel', now = performance.now()) {
-    const size = currentCellSize();
-    const bodySize = size - 6;
-    const px = enemy.x * size + 5;
-    const py = enemy.y * size + 5;
-    const bodyColor = type === 'general' ? '#fffdf5' : '#ffe06a';
-    const accentColor = type === 'general' ? '#d8b74d' : '#fff6c7';
-
-    ctx.fillStyle = bodyColor;
-    ctx.fillRect(px, py, bodySize, bodySize);
-    ctx.strokeStyle = '#c89f2c';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(px + 1, py + 1, bodySize - 2, bodySize - 2);
-
-    ctx.strokeStyle = accentColor;
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.ellipse(px + bodySize / 2, py - 2, bodySize * 0.28, 4, 0, 0, Math.PI * 2);
-    ctx.stroke();
-
-    if (type === 'general') {
-      ctx.fillStyle = '#ffd54f';
-      ctx.beginPath();
-      ctx.moveTo(px + bodySize * 0.2, py + 2);
-      ctx.lineTo(px + bodySize * 0.35, py - 5);
-      ctx.lineTo(px + bodySize * 0.5, py + 2);
-      ctx.lineTo(px + bodySize * 0.65, py - 5);
-      ctx.lineTo(px + bodySize * 0.8, py + 2);
-      ctx.closePath();
-      ctx.fill();
-    } else {
-      ctx.fillStyle = 'rgba(255,255,255,0.88)';
-      ctx.fillRect(px - 3, py + bodySize * 0.38, 5, bodySize * 0.18);
-      ctx.fillRect(px + bodySize - 2, py + bodySize * 0.38, 5, bodySize * 0.18);
-    }
-
-    ctx.fillStyle = '#2d2411';
-    ctx.fillRect(px + bodySize * 0.24, py + bodySize * 0.28, Math.max(3, bodySize * 0.12), Math.max(3, bodySize * 0.12));
-    ctx.fillRect(px + bodySize * 0.64, py + bodySize * 0.28, Math.max(3, bodySize * 0.12), Math.max(3, bodySize * 0.12));
-    ctx.strokeStyle = '#2d2411';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(px + bodySize * 0.28, py + bodySize * 0.72);
-    ctx.lineTo(px + bodySize * 0.72, py + bodySize * 0.72);
-    ctx.stroke();
-  }
-
-  function drawBossAvatar(now = performance.now()) {
-    if (!boss?.active) return;
-
-    const floatX = canvas.width / 2 + Math.sin(now * 0.0018 + boss.floatSeed) * 110;
-    const floatY = 84 + Math.sin(now * 0.003 + boss.floatSeed) * 10;
-    const wingLift = Math.sin(now * 0.01) * 10;
-
-    ctx.save();
-    ctx.translate(floatX, floatY);
-
-    ctx.fillStyle = 'rgba(255,255,255,0.2)';
-    ctx.beginPath();
-    ctx.ellipse(0, -54, 34, 9, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = '#ffe28a';
-    ctx.lineWidth = 3;
-    ctx.stroke();
-
-    ctx.fillStyle = 'rgba(255,255,255,0.85)';
-    ctx.beginPath();
-    ctx.moveTo(-70, -6);
-    ctx.quadraticCurveTo(-112, -38 - wingLift, -88, 28);
-    ctx.quadraticCurveTo(-62, 10, -34, 0);
-    ctx.closePath();
-    ctx.fill();
-
-    ctx.beginPath();
-    ctx.moveTo(70, -6);
-    ctx.quadraticCurveTo(112, -38 - wingLift, 88, 28);
-    ctx.quadraticCurveTo(62, 10, 34, 0);
-    ctx.closePath();
-    ctx.fill();
-
-    ctx.fillStyle = '#fff6cf';
-    roundedRectPath(-28, -28, 56, 56, 12);
-    ctx.fill();
-    ctx.strokeStyle = '#d8b24b';
-    ctx.lineWidth = 3;
-    ctx.stroke();
-
-    ctx.fillStyle = '#2d2411';
-    ctx.fillRect(-12, -10, 6, 6);
-    ctx.fillRect(6, -10, 6, 6);
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(-10, 12);
-    ctx.lineTo(10, 12);
-    ctx.stroke();
-
-    ctx.fillStyle = '#ffd54f';
-    ctx.beginPath();
-    ctx.moveTo(-24, 26);
-    ctx.lineTo(0, 62);
-    ctx.lineTo(24, 26);
-    ctx.closePath();
-    ctx.fill();
-
-    ctx.restore();
-  }
-
-  function levelColors() {
-    if (angelRealm) {
-      return {
-        a: 'hsl(48 100% 88%)',
-        b: 'hsl(44 96% 73%)'
-      };
-    }
-
-    const hue = (level * 27) % 360;
-    return {
-      a: `hsl(${hue} 35% 18%)`,
-      b: `hsl(${(hue + 18) % 360} 32% 13%)`
-    };
-  }
-
-  function ensureBoardCache() {
-    const key = `${angelRealm ? 'angel' : 'normal'}-${level}-${currentGridSize()}-${canvas.width}-${canvas.height}`;
-    if (boardCache && boardCacheKey === key) return;
-
-    boardCacheKey = key;
-    boardCache = document.createElement('canvas');
-    boardCache.width = canvas.width;
-    boardCache.height = canvas.height;
-    const bctx = boardCache.getContext('2d');
-    if (!bctx) return;
-    const grid = currentGridSize();
-    const size = currentCellSize();
-    const colors = levelColors();
-
-    bctx.fillStyle = colors.b;
-    bctx.fillRect(0, 0, boardCache.width, boardCache.height);
-
-    for (let y = 0; y < grid; y++) {
-      for (let x = 0; x < grid; x++) {
-        bctx.fillStyle = (x + y) % 2 === 0 ? colors.a : colors.b;
-        bctx.fillRect(x * size, y * size, size, size);
-      }
-    }
-
-    if (angelRealm) {
-      const glow = bctx.createRadialGradient(boardCache.width / 2, boardCache.height * 0.15, 10, boardCache.width / 2, boardCache.height / 2, boardCache.width * 0.7);
-      glow.addColorStop(0, 'rgba(255,255,255,0.28)');
-      glow.addColorStop(0.45, 'rgba(255,248,205,0.14)');
-      glow.addColorStop(1, 'rgba(255,255,255,0)');
-      bctx.fillStyle = glow;
-      bctx.fillRect(0, 0, boardCache.width, boardCache.height);
-    }
-  }
-
-  function drawPortal(portal, now) {
-    const size = currentCellSize();
-    const cx = (portal.x + 0.5) * size;
-    const cy = (portal.y + 0.5) * size;
-    const phase = Math.min(1, (now - portal.start) / portal.duration);
-    const pulse = phase < 0.5 ? phase / 0.5 : (1 - phase) / 0.5;
-    const outer = size * (0.1 + pulse * 0.3);
-    const inner = size * (0.05 + pulse * 0.18);
-
-    ctx.save();
-    ctx.shadowBlur = 18;
-    ctx.shadowColor = '#8d7bff';
-
-    const fill = ctx.createRadialGradient(cx, cy, inner * 0.2, cx, cy, outer);
-    fill.addColorStop(0, 'rgba(164, 120, 255, 0.95)');
-    fill.addColorStop(0.55, 'rgba(80, 120, 255, 0.72)');
-    fill.addColorStop(1, 'rgba(30, 10, 80, 0.08)');
-    ctx.fillStyle = fill;
-    ctx.beginPath();
-    ctx.arc(cx, cy, outer, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.strokeStyle = '#d6c8ff';
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.arc(cx, cy, outer, 0, Math.PI * 2);
-    ctx.stroke();
-
-    ctx.strokeStyle = '#6ea8ff';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.arc(cx, cy, inner, 0, Math.PI * 2);
-    ctx.stroke();
-
-    for (let i = 0; i < 6; i++) {
-      const angle = (Math.PI * 2 * i) / 6 + now * 0.01;
-      const dist = outer + 4 + Math.sin(now * 0.02 + i) * 4;
-      const px = cx + Math.cos(angle) * dist;
-      const py = cy + Math.sin(angle) * dist;
-      ctx.fillStyle = i % 2 === 0 ? 'rgba(182,140,255,0.85)' : 'rgba(104,196,255,0.8)';
-      ctx.beginPath();
-      ctx.arc(px, py, 2.2, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
-    ctx.restore();
-  }
-
-  function draw(now = performance.now()) {
-    try {
-      ensureBoardCache();
-      if (boardCache) {
-        ctx.drawImage(boardCache, 0, 0);
-      } else {
-        // Fallback: draw something if board cache fails
-        ctx.fillStyle = '#1a1a2e';
+        ctx.fillStyle = 'rgba(0,0,0,0.28)';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-      }
-
-      obstacles.forEach(ob => drawRoundedCell(ob.x, ob.y, '#6d768a', 6, 0.96));
-      bonusApples.forEach(ap => drawFoodCell(ap, now, '#ffbe3b', 'rgba(255,190,59,0.45)'));
-      if (food) drawFoodCell(food, now, '#ff7b54', 'rgba(255,123,84,0.5)');
-      if (healOrb) drawRoundedCell(healOrb.x, healOrb.y, '#8fffd0', 12, 0.9 + Math.sin(now * 0.012) * 0.07, 'rgba(143,255,208,0.2)');
-      if (altar) drawRoundedCell(altar.x, altar.y, '#fff6b0', 10, 0.88 + Math.sin(now * 0.015) * 0.06, 'rgba(255,245,180,0.28)');
-
-      angels.forEach(enemy => drawAngelEnemy(enemy, 'angel', now));
-      generalAngels.forEach(enemy => drawAngelEnemy(enemy, 'general', now));
-
-      if (snake.length) {
-        const bodyColor = jackpotMode ? '#9c4dff' : '#2bc866';
-        snake.slice(1).forEach((seg, index) => {
-          const scale = 0.97 + Math.sin(now * 0.008 + index * 0.45) * 0.02;
-          drawRoundedCell(seg.x, seg.y, bodyColor, 8, scale, null);
-        });
-
-        drawHead(snake[0], now, snake[0].x, snake[0].y);
-
-        const size = currentCellSize();
-        ctx.fillStyle = jackpotMode ? '#fff4b2' : '#ffffff';
-        ctx.font = 'bold 12px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText(playerName, snake[0].x * size + size / 2, Math.max(12, snake[0].y * size - 6));
-
-        if (jackpotMode) {
-          if (now >= jackpotHud.nextRollAt) {
-            jackpotHud.mode = Math.random() < 0.5 ? 'XP' : '%XP';
-            jackpotHud.nextRollAt = now + 5000;
-          }
-          if (Math.random() < 0.18) {
-            emitParticles(snake[snake.length - 1].x, snake[snake.length - 1].y, 2, ['rgba(255,215,0,0.95)', 'rgba(255,255,255,0.92)', 'rgba(156,77,255,0.88)']);
-          }
-        }
-      }
-
-      skyBeams.forEach(beam => {
-        const size = currentCellSize();
-        ctx.fillStyle = beam.warning > 0 ? 'rgba(255,255,255,0.15)' : 'rgba(255,236,130,0.32)';
-        ctx.fillRect(beam.x * size, 0, size, canvas.height);
-      });
-
-      projectiles.forEach(projectile => {
-        const size = currentCellSize();
-        ctx.fillStyle = projectile.color;
-        ctx.beginPath();
-        ctx.arc(projectile.x * size, projectile.y * size, Math.max(3, size * 0.12), 0, Math.PI * 2);
-        ctx.fill();
-      });
-
-      trackingLasers.forEach(laser => {
-        const size = currentCellSize();
-        ctx.strokeStyle = 'rgba(255,248,180,0.85)';
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.moveTo((laser.x - laser.vx * 4) * size, (laser.y - laser.vy * 4) * size);
-        ctx.lineTo(laser.x * size, laser.y * size);
-        ctx.stroke();
-        ctx.fillStyle = '#fff3b0';
-        ctx.beginPath();
-        ctx.arc(laser.x * size, laser.y * size, Math.max(4, size * 0.14), 0, Math.PI * 2);
-        ctx.fill();
-      });
-
-      grenades.forEach(grenade => {
-        const size = currentCellSize();
-        const alpha = grenade.exploding > 0 ? 0.34 : 0.16 + Math.sin(now * 0.02) * 0.05;
-        ctx.fillStyle = `rgba(255, 70, 70, ${alpha})`;
-        ctx.fillRect((grenade.x - 1) * size, (grenade.y - 1) * size, size * 3, size * 3);
-      });
-
-      activePortals = activePortals.filter(portal => now < portal.start + portal.duration);
-      activePortals.forEach(portal => drawPortal(portal, now));
-
-      if (boss?.active) {
-        drawBossAvatar(now);
-        ctx.fillStyle = 'rgba(0,0,0,0.5)';
-        ctx.fillRect(16, 12, canvas.width - 32, 16);
-        ctx.fillStyle = '#ffd54f';
-        ctx.fillRect(16, 12, ((canvas.width - 32) * boss.hp) / boss.maxHp, 16);
-        ctx.fillStyle = '#fff';
-        ctx.font = 'bold 12px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText(`${boss.name} ${boss.hp}/${boss.maxHp}`, canvas.width / 2, 24);
-      }
-
-      if (jackpotMode) {
-        ctx.fillStyle = 'rgba(52, 18, 76, 0.86)';
-        ctx.fillRect(canvas.width - 128, 38, 112, 44);
-        ctx.strokeStyle = '#ffd54f';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(canvas.width - 128, 38, 112, 44);
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 11px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText('JACKPOT', canvas.width - 72, 54);
-        ctx.fillStyle = '#ffd54f';
-        ctx.fillText(jackpotHud.mode, canvas.width - 72, 70);
-      }
-
-      particles = particles.filter(particle => {
-        particle.x += particle.vx;
-        particle.y += particle.vy;
-        particle.life -= 1;
-        ctx.fillStyle = particle.color;
-        ctx.beginPath();
-        ctx.arc(particle.x, particle.y, particle.radius, 0, Math.PI * 2);
-        ctx.fill();
-        return particle.life > 0;
-      });
-
-      if (angelRealm || jackpotMode) {
-        ctx.fillStyle = 'rgba(0,0,0,0.34)';
-        ctx.fillRect(0, canvas.height - 26, canvas.width, 26);
-        ctx.fillStyle = '#fff';
-        ctx.font = 'bold 13px Arial';
-        ctx.textAlign = 'left';
-        ctx.fillText(`HP ${playerHealth}/${maxHealth}   XP ${xp}   Lv ${xpLevel}`, 10, canvas.height - 9);
-      }
-
-      if (realmMessage && now < realmMessageUntil) {
-        ctx.fillStyle = 'rgba(255,255,255,0.92)';
-        ctx.font = 'bold 16px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText(realmMessage, canvas.width / 2, canvas.height - 34);
-      }
-
-      if (gameOver) {
-        ctx.fillStyle = 'rgba(0,0,0,0.55)';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = '#fff';
-        ctx.font = 'bold 28px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText('Game Over', canvas.width / 2, canvas.height / 2 - 10);
-        ctx.font = '16px Arial';
-        ctx.fillText('Press R to revive', canvas.width / 2, canvas.height / 2 + 18);
       }
     } catch (e) {
       console.error('Draw error:', e);
-      ctx.fillStyle = '#ff0000';
+      ctx.fillStyle = '#111';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = '#ffffff';
-      ctx.font = '20px Arial';
-      ctx.textAlign = 'center';
-      ctx.fillText('ERROR', canvas.width / 2, canvas.height / 2);
     }
   }
 
@@ -1564,8 +1990,22 @@
     if (!lastFrameTime) lastFrameTime = now;
     const delta = now - lastFrameTime;
     lastFrameTime = now;
+    const countdownActive = isCountdownActive(now);
 
-    if (!gameOver && window.location.hash !== '#cheats') {
+    if (countdownActive !== lastCountdownActive) {
+      lastCountdownActive = countdownActive;
+      updateHud();
+    }
+
+    if (!gameOver && !paused && !countdownActive && comboTimer > 0) {
+      comboTimer -= delta;
+      if (comboTimer <= 0 && comboCount !== 0) {
+        comboCount = 0;
+        updateHud();
+      }
+    }
+
+    if (!gameOver && !paused && !countdownActive && window.location.hash !== '#cheats') {
       accumulator += delta;
       while (accumulator >= tickMs) {
         step();
@@ -1582,6 +2022,14 @@
     const movementKeys = ['arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'w', 'a', 's', 'd'];
     if (movementKeys.includes(key)) event.preventDefault();
 
+    if (blessingSelectionOpen) {
+      if (['1', '2', '3'].includes(key)) {
+        const picked = currentBlessingOptions[Number(key) - 1];
+        if (picked) chooseBlessing(picked.key);
+      }
+      return;
+    }
+
     keyBuffer.push(key);
     if (keyBuffer.length > 40) keyBuffer.shift();
 
@@ -1590,6 +2038,7 @@
       updateView();
     }
     if (endsWithSequence(['g', 'o', 'd'])) {
+      markCheatUsed();
       invincible = true;
       updateHud();
     }
@@ -1597,6 +2046,7 @@
       enterAngelRealm();
     }
     if (endsWithSequence(['j', 'a', 'c', 'k', 'p', 'o', 't'])) {
+      markCheatUsed();
       jackpotMode = true;
       abilities.luck += 1;
       recalcStats();
@@ -1604,12 +2054,21 @@
       showRealmMessage('Jackpot skin unlocked', 1800);
       updateHud();
     }
+
+    if (endsWithSequence('leaderboardabuse'.split(''))) {
+      markCheatUsed();
+      leaderboardAbuseMode = true;
+      showRealmMessage('Leaderboard override armed', 1800);
+      updateHud();
+    }
     if (endsWithSequence(['h', 'e', 'a', 'l'])) {
+      markCheatUsed();
       playerHealth = maxHealth;
       showRealmMessage('Full heal', 1200);
       updateHud();
     }
     if (endsWithSequence(['c', 'l', 'e', 'a', 'r'])) {
+      markCheatUsed();
       obstacles = [];
       grenades = [];
       projectiles = [];
@@ -1619,16 +2078,19 @@
       updateHud();
     }
     if (endsWithSequence(['s', 'm', 'i', 't', 'e'])) {
+      markCheatUsed();
       const removed = angels.length + generalAngels.length;
       angels = [];
       generalAngels = [];
       score += removed * 12;
       gainXp(removed * 8);
+      addCoins(Math.ceil(removed / 2));
       emitParticles(snake[0].x, snake[0].y, 18, ['rgba(255,255,255,0.98)', 'rgba(255,236,120,0.95)']);
       showRealmMessage('Smite!', 1200);
       updateHud();
     }
     if (endsWithSequence(['h', 'a', 'l', 'o'])) {
+      markCheatUsed();
       abilities.vigor += 1;
       abilities.reflex += 1;
       recalcStats();
@@ -1638,12 +2100,14 @@
       updateHud();
     }
     if (endsWithSequence(['b', 'l', 'e', 's', 's'])) {
+      markCheatUsed();
       healOrb = randomEmptyCell();
       gainXp(15);
       showRealmMessage('Blessing dropped', 1400);
       updateHud();
     }
     if (endsWithSequence(['n', 'e', 'x', 't'])) {
+      markCheatUsed();
       advanceProgress();
       showRealmMessage('Round skipped', 1200);
     }
@@ -1651,11 +2115,19 @@
     scheduleSpeedCommandParse();
 
     if (endsWithSequence(['f', 'o', 'o', 'd'])) {
+      markCheatUsed();
       fillWorldWithApples();
     }
     if (endsWithSequence(['a', 'i', 'm']) || endsWithSequence(['a', 'i', 'm', 'b', 'o', 't'])) {
+      markCheatUsed();
       autoAim = !autoAim;
       updateHud();
+    }
+
+    if ((key === 'p' || key === ' ') && currentScreen === 'game' && window.location.hash !== '#cheats' && !gameOver) {
+      event.preventDefault();
+      togglePause();
+      return;
     }
 
     if (key === 'r' && gameOver) {
@@ -1670,17 +2142,65 @@
   });
 
   window.addEventListener('hashchange', updateView);
+  document.addEventListener('fullscreenchange', updateView);
   backBtn.addEventListener('click', () => {
     window.location.hash = '';
     updateView();
   });
-  restartBtn.addEventListener('click', resetGame);
+  restartBtn.addEventListener('click', () => resetGame());
+  if (pauseBtn) pauseBtn.addEventListener('click', () => togglePause());
   if (homeBtn) homeBtn.addEventListener('click', returnHome);
+  if (tryAgainBtn) tryAgainBtn.addEventListener('click', () => resetGame());
+  if (gameOverHomeBtn) gameOverHomeBtn.addEventListener('click', returnHome);
   if (playNormalBtn) playNormalBtn.addEventListener('click', () => startMode('normal'));
   if (playEndlessBtn) playEndlessBtn.addEventListener('click', () => startMode('endless'));
   if (changeNameBtn) changeNameBtn.addEventListener('click', changePlayerName);
+  if (dailyRewardBtn) dailyRewardBtn.addEventListener('click', claimDailyReward);
+  if (leaderboardBtn) leaderboardBtn.addEventListener('click', () => openInfoPanel('leaderboard'));
+  if (guideBtn) guideBtn.addEventListener('click', () => openInfoPanel('guide'));
+  if (spinBtn) spinBtn.addEventListener('click', () => openInfoPanel('spin'));
+  if (eventsBtn) eventsBtn.addEventListener('click', () => openInfoPanel('events'));
+  if (missionsBtn) missionsBtn.addEventListener('click', () => openInfoPanel('missions'));
+  if (shopBtn) shopBtn.addEventListener('click', () => toggleShop(true));
+  if (shopCloseBtn) shopCloseBtn.addEventListener('click', () => toggleShop(false));
+  if (infoCloseBtn) infoCloseBtn.addEventListener('click', closeInfoPanel);
+  if (infoOverlay) infoOverlay.addEventListener('click', (event) => {
+    if (event.target === infoOverlay) closeInfoPanel();
+  });
+  if (infoContentEl) infoContentEl.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-action]');
+    if (!button) return;
+    if (button.dataset.action === 'spin') runLuckySpin();
+    if (button.dataset.action === 'claim-event') claimChallenge('event');
+    if (button.dataset.action === 'claim-mission') claimChallenge('mission', Number(button.dataset.index || 0));
+    updateView();
+  });
+  if (shopOverlay) shopOverlay.addEventListener('click', (event) => {
+    if (event.target === shopOverlay) toggleShop(false);
+  });
+  if (shopItemsEl) shopItemsEl.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-skin]');
+    if (!button) return;
+    handleShopAction(button.dataset.skin);
+  });
+  if (fullscreenBtn) fullscreenBtn.addEventListener('click', toggleFullscreen);
+  touchButtons.forEach(button => {
+    button.addEventListener('pointerdown', (event) => {
+      if (currentScreen !== 'game' || gameOver || blessingSelectionOpen || window.location.hash === '#cheats') return;
+      event.preventDefault();
+      const dir = button.dataset.dir;
+      if (dir === 'up') queueTurn({ x: 0, y: -1 });
+      if (dir === 'down') queueTurn({ x: 0, y: 1 });
+      if (dir === 'left') queueTurn({ x: -1, y: 0 });
+      if (dir === 'right') queueTurn({ x: 1, y: 0 });
+    });
+  });
 
+  normalizeSkinState();
   updateView();
   resetGame();
+  window.setInterval(() => {
+    if (currentScreen === 'home') updateView();
+  }, 1000);
   requestAnimationFrame(frame);
 })();

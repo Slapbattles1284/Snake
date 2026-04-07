@@ -3,54 +3,216 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>snake</title>
+  <title>Snake</title>
+  <link rel="icon" href="snake-favicon.svg" type="image/svg+xml" sizes="any">
+  <link rel="shortcut icon" href="snake-favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <main class="card-wrap">
     <section class="card home-card" id="homePage">
-      <div class="card-header">
-        <p class="eyebrow">HOME</p>
-        <h1>snake</h1>
-        <p class="subtext">Pick a mode, set your name, and jump in.</p>
-      </div>
+      <div class="home-stage">
+        <div class="home-stage-art" aria-hidden="true">
+          <span class="art-cell art-snake a1"></span>
+          <span class="art-cell art-snake a2"></span>
+          <span class="art-cell art-snake a3"></span>
+          <span class="art-cell art-food a4"></span>
+          <span class="art-cell art-food a5"></span>
+          <span class="art-cell art-wall a6"></span>
+          <span class="art-cell art-wall a7"></span>
+        </div>
 
-      <div class="menu-grid">
-        <button id="playNormalBtn" type="button">Normal play</button>
-        <button id="playEndlessBtn" type="button">Endless</button>
-        <button id="changeNameBtn" type="button">Change name</button>
-        <button id="shopBtn" type="button" disabled>Shop — coming soon</button>
-      </div>
+        <div class="home-topbar">
+          <div class="home-bank coin-pill"><img src="coin.svg" class="coin-icon" alt="Coin" /> <strong id="coinBankLabel">0</strong></div>
+        </div>
 
-      <p class="hint">Player name: <strong id="playerNameLabel">Player</strong></p>
+        <div class="home-panel">
+          <div class="card-header home-header">
+            <p class="eyebrow">HOME</p>
+            <h1>Snake</h1>
+            <p class="subtext">Pick a mode, set your name, claim rewards, and style your snake.</p>
+          </div>
+
+          <div class="mode-stack">
+            <button id="playNormalBtn" class="mode-btn primary" type="button">▶ Play</button>
+            <button id="playEndlessBtn" class="mode-btn secondary" type="button">∞ Endless</button>
+          </div>
+
+          <p class="hint home-hint">
+            Player name: <strong id="playerNameLabel">Player</strong>
+          </p>
+        </div>
+
+        <nav class="home-dock" aria-label="Home menu">
+          <button id="leaderboardBtn" class="home-fab dock-btn" type="button" data-label="Leaderboard" aria-label="Leaderboard">
+            <span class="dock-icon">🏆</span>
+            <span class="dock-text">Ranks</span>
+          </button>
+          <button id="guideBtn" class="home-fab dock-btn" type="button" data-label="Guide" aria-label="Guide">
+            <span class="dock-icon">📘</span>
+            <span class="dock-text">Guide</span>
+          </button>
+          <button id="shopBtn" class="home-fab dock-btn" type="button" data-label="Shop" aria-label="Shop">
+            <span class="dock-icon">🛍️</span>
+            <span class="dock-text">Shop</span>
+          </button>
+          <button id="changeNameBtn" class="home-fab dock-btn" type="button" data-label="Change name" aria-label="Change name">
+            <span class="dock-icon">✏️</span>
+            <span class="dock-text">Name</span>
+          </button>
+          <button id="spinBtn" class="home-fab dock-btn" type="button" data-label="Lucky Spin" aria-label="Lucky Spin">
+            <span class="dock-icon">🎡</span>
+            <span class="dock-text">Spin</span>
+          </button>
+          <button id="dailyRewardBtn" class="home-fab dock-btn" type="button" data-label="Daily reward" aria-label="Daily reward">
+            <span class="dock-icon">🎁</span>
+            <span class="dock-text">Daily</span>
+          </button>
+          <button id="eventsBtn" class="home-fab dock-btn" type="button" data-label="Events" aria-label="Events">
+            <span class="dock-icon">⭐</span>
+            <span class="dock-text">Events</span>
+          </button>
+          <button id="missionsBtn" class="home-fab dock-btn" type="button" data-label="Missions" aria-label="Missions">
+            <span class="dock-icon">📋</span>
+            <span class="dock-text">Tasks</span>
+          </button>
+          <button id="fullscreenBtn" class="home-fab dock-btn" type="button" data-label="Fullscreen" aria-label="Fullscreen">
+            <span class="dock-icon">⛶</span>
+            <span class="dock-text">Full</span>
+          </button>
+        </nav>
+
+        <div class="info-overlay hidden" id="infoOverlay">
+          <div class="info-sheet">
+            <div class="shop-head">
+              <div>
+                <p class="eyebrow" id="infoEyebrow">INFO</p>
+                <h2 id="infoTitle">panel</h2>
+                <p class="subtext" id="infoSubtitle">Extra game info.</p>
+              </div>
+              <button id="infoCloseBtn" class="shop-close" type="button" aria-label="Close panel">✕</button>
+            </div>
+            <div class="info-content" id="infoContent"></div>
+          </div>
+        </div>
+
+        <div class="shop-overlay hidden" id="shopOverlay">
+          <div class="shop-sheet">
+            <div class="shop-head">
+              <div>
+                <p class="eyebrow">SHOP</p>
+                <h2>snake skins</h2>
+                <p class="subtext">Spend coins on mobile-style skins and equip your favorite.</p>
+              </div>
+              <button id="shopCloseBtn" class="shop-close" type="button" aria-label="Close shop">✕</button>
+            </div>
+
+            <div class="shop-balance coin-pill"><img src="coin.svg" class="coin-icon" alt="Coin" /> <strong id="shopCoinLabel">0</strong></div>
+            <div class="shop-grid" id="shopItems"></div>
+          </div>
+        </div>
+      </div>
     </section>
 
     <section class="card game-card hidden" id="gamePage">
-      <div class="card-header">
-        <p class="eyebrow">SNAKE</p>
-        <h1>snake</h1>
-        <p class="subtext">Use arrow keys or WASD. Press <code>R</code> to revive after a crash. Survive 15 levels with 30 rounds each.</p>
-      </div>
+      <div class="game-stage">
+        <div class="home-stage-art game-stage-art" aria-hidden="true">
+          <span class="art-cell art-snake a1"></span>
+          <span class="art-cell art-snake a2"></span>
+          <span class="art-cell art-snake a3"></span>
+          <span class="art-cell art-food a4"></span>
+          <span class="art-cell art-food a5"></span>
+          <span class="art-cell art-wall a6"></span>
+          <span class="art-cell art-wall a7"></span>
+        </div>
 
-      <div class="hud">
-        <div><strong>Level:</strong> <span id="level">1</span>/<span id="levelCap">15</span></div>
-        <div><strong>Round:</strong> <span id="round">1</span>/<span id="roundCap">30</span></div>
-        <div><strong>Score:</strong> <span id="score">0</span></div>
-        <div><strong>Health:</strong> <span id="health">10/10</span></div>
-        <div><strong>XP:</strong> <span id="xp">0</span></div>
-        <div><strong>Status:</strong> <span id="status">playing</span></div>
-      </div>
+        <div class="game-topbar">
+          <div class="game-mode-pill">
+            <p class="eyebrow">RUN</p>
+            <strong id="gameModeLabel">Normal Run</strong>
+          </div>
 
-      <div class="game-panel">
-        <canvas id="game" width="560" height="560" aria-label="7 by 7 snake game"></canvas>
-      </div>
+          <div class="game-inline-controls">
+            <button id="pauseBtn" type="button">Pause</button>
+            <button id="restartBtn" type="button">Restart</button>
+            <button id="homeBtn" type="button">Home</button>
+          </div>
+        </div>
 
-      <div class="controls">
-        <button id="homeBtn" type="button">Home</button>
-        <button id="restartBtn" type="button">Restart</button>
-      </div>
+        <div class="game-shell">
+          <div class="game-frame">
+            <div class="realm-pill hidden" id="realmXpWrap">✨ <span id="xp">0</span></div>
 
-      <p class="hint">There are hidden cheat codes in here somewhere.</p>
+            <div class="game-panel">
+              <canvas id="game" width="560" height="560" aria-label="7 by 7 snake game"></canvas>
+            </div>
+
+            <div class="game-over-overlay hidden" id="gameOverOverlay">
+              <div class="game-over-sheet">
+                <p class="eyebrow">RUN ENDED</p>
+                <h2 id="gameOverTitle">Game Over</h2>
+                <p class="game-over-subtext">Your run summary shows up here after you crash.</p>
+
+                <div class="game-over-stats">
+                  <div class="game-over-stat coin-tile">
+                    <span>Money</span>
+                    <strong><img src="coin.svg" class="coin-icon" alt="Coin" /> <span id="coins">0</span></strong>
+                  </div>
+                  <div class="game-over-stat">
+                    <span>Score</span>
+                    <strong id="score">0</strong>
+                  </div>
+                  <div class="game-over-stat">
+                    <span>High Score</span>
+                    <strong id="bestScore">0</strong>
+                  </div>
+                </div>
+
+                <div class="game-over-actions">
+                  <button id="tryAgainBtn" type="button">Try Again</button>
+                  <button id="gameOverHomeBtn" class="ghost-btn" type="button">Home</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="game-bottom-bar" aria-label="Current progress">
+            <div class="bottom-stat-pill">
+              <span>Level</span>
+              <strong id="level">1</strong>
+            </div>
+            <div class="bottom-stat-pill">
+              <span>Round</span>
+              <strong id="round">1</strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="hud-cache" aria-hidden="true">
+          <span id="levelCap">15</span>
+          <span id="roundCap">30</span>
+          <span id="health">10/10</span>
+          <span id="combo">x1</span>
+          <span id="mapSize">7x7</span>
+          <span id="status">playing</span>
+        </div>
+
+        <div class="ability-overlay hidden" id="abilityOverlay">
+          <div class="ability-sheet">
+            <p class="eyebrow">ANGEL REALM</p>
+            <h2>Choose a blessing</h2>
+            <p class="subtext">Pick 1 of 3 upgrades.</p>
+            <div class="ability-grid" id="abilityChoices"></div>
+          </div>
+        </div>
+
+        <div class="touch-controls" aria-label="Touch controls">
+          <button class="touch-btn touch-up" data-dir="up" type="button" aria-label="Move up">▲</button>
+          <button class="touch-btn touch-left" data-dir="left" type="button" aria-label="Move left">◀</button>
+          <button class="touch-btn touch-down" data-dir="down" type="button" aria-label="Move down">▼</button>
+          <button class="touch-btn touch-right" data-dir="right" type="button" aria-label="Move right">▶</button>
+        </div>
+      </div>
     </section>
 
     <section class="card cheat-card hidden" id="cheatPage">
