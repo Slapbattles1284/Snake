@@ -6,7 +6,7 @@
   <title>Snake</title>
   <link rel="icon" href="snake-favicon.svg" type="image/svg+xml" sizes="any">
   <link rel="shortcut icon" href="snake-favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=20260407b">
 </head>
 <body>
   <main class="card-wrap">
@@ -96,13 +96,15 @@
 
         <div class="info-overlay hidden" id="infoOverlay">
           <div class="info-sheet">
+            <div class="panel-float-close">
+              <button id="infoCloseBtn" class="shop-close floaty-close" type="button" aria-label="Close panel">✕</button>
+            </div>
             <div class="shop-head">
               <div>
                 <p class="eyebrow" id="infoEyebrow">INFO</p>
                 <h2 id="infoTitle">panel</h2>
                 <p class="subtext" id="infoSubtitle">Extra game info.</p>
               </div>
-              <button id="infoCloseBtn" class="shop-close" type="button" aria-label="Close panel">✕</button>
             </div>
             <div class="info-content" id="infoContent"></div>
           </div>
@@ -110,13 +112,15 @@
 
         <div class="shop-overlay hidden" id="shopOverlay">
           <div class="shop-sheet">
+            <div class="panel-float-close">
+              <button id="shopCloseBtn" class="shop-close floaty-close" type="button" aria-label="Close shop">✕</button>
+            </div>
             <div class="shop-head">
               <div>
                 <p class="eyebrow">SHOP</p>
                 <h2>snake skins</h2>
                 <p class="subtext">Spend coins on skins, equip favorites, or switch back to Classic anytime.</p>
               </div>
-              <button id="shopCloseBtn" class="shop-close" type="button" aria-label="Close shop">✕</button>
             </div>
 
             <div class="shop-balance coin-pill"><img src="coin.svg" class="coin-icon" alt="Coin" /> <strong id="shopCoinLabel">0</strong></div>
@@ -224,6 +228,15 @@
             <p class="eyebrow">ANGEL REALM</p>
             <h2>Choose a blessing</h2>
             <p class="subtext">Pick 1 of 3 upgrades.</p>
+            <div class="ability-auto-pick" aria-label="Angel Realm auto pick">
+              <span class="ability-auto-pick-label">Auto pick</span>
+              <div class="ability-auto-pick-buttons">
+                <button class="ability-auto-pick-btn" type="button" data-auto-blessing="0" aria-pressed="true">Off</button>
+                <button class="ability-auto-pick-btn" type="button" data-auto-blessing="1" aria-pressed="false">1</button>
+                <button class="ability-auto-pick-btn" type="button" data-auto-blessing="2" aria-pressed="false">2</button>
+                <button class="ability-auto-pick-btn" type="button" data-auto-blessing="3" aria-pressed="false">3</button>
+              </div>
+            </div>
             <div class="ability-grid" id="abilityChoices"></div>
           </div>
         </div>
@@ -284,6 +297,6 @@
       <strong id="achievementToastReward">+0 coins</strong>
     </div>
   </div>
-  <script src="script.js"></script>
+  <script src="script.js?v=20260407b"></script>
 </body>
 </html>

@@ -11,7 +11,7 @@ A browser-based Snake game with:
 ## Run locally
 
 ```bash
-python3 -m http.server 8000
+python3 serve_local.py
 # then open http://127.0.0.1:8000
 ```
 

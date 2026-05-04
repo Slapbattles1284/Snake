@@ -45,6 +45,7 @@
   const coinBankLabel = document.getElementById('coinBankLabel');
   const abilityOverlay = document.getElementById('abilityOverlay');
   const abilityChoicesEl = document.getElementById('abilityChoices');
+  const abilityAutoPickButtons = Array.from(document.querySelectorAll('[data-auto-blessing]'));
   const infoOverlay = document.getElementById('infoOverlay');
   const infoTitleEl = document.getElementById('infoTitle');
   const infoSubtitleEl = document.getElementById('infoSubtitle');
@@ -91,6 +92,8 @@
   const cheatSuffix = ']]';
   const portalSequence = 'fghj'.repeat(5).split('');
   const tongueVisibleDurationMs = 520;
+  const reducedMotionQuery = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;
+  const blessingAutoPickDelayMs = 260;
   const tierOrderMap = {
     starter: 0,
     core: 1,
@@ -210,10 +213,15 @@
     { key: 'idledeath', name: 'Idle Death', emoji: '☄️', price: 136, desc: 'A lethal silver-and-burgundy fever skin with hard neon cuts.', body: '#d6d7db', head: '#ffffff', accent: '#8b1e3f', stripe: '#ff66b3', belly: '#fff8f7', eye: '#3b1020', glow: 'rgba(255, 102, 179, 0.28)', pattern: 'diamond', label: '#ffffff', bgA: '#34121f', bgB: '#0d1117' },
     { key: 'housecollapse', name: 'House Collapse', emoji: '💸', price: 168, desc: 'Mint jackpots and champagne gold bursting through a midnight shell.', body: '#141821', head: '#f5efdc', accent: '#6ee7b7', stripe: '#facc15', belly: '#fffaf0', eye: '#eafffa', glow: 'rgba(110, 231, 183, 0.32)', pattern: 'chevron', label: '#fffdf6', bgA: '#10281f', bgB: '#110d18' },
     { key: 'probabilityzero', name: 'Probability Zero', emoji: '🎇', price: 220, desc: 'An absurd fever-dream finish of ivory, noir, pink sparks, and lucky cyan fire.', body: '#111216', head: '#fff8ea', accent: '#58f7e8', stripe: '#ff4da6', belly: '#fffdf8', eye: '#ffe27a', glow: 'rgba(88, 247, 232, 0.34)', pattern: 'jackpot', label: '#fffdf7', bgA: '#2a1118', bgB: '#061018' },
-    { key: 'wormholewyrm', name: 'Wormhole Wyrm', emoji: '🌀', price: 176, desc: 'Folded-space indigo coils with cyan tunnel rings and violet tear-light drifting through the void.', body: '#101436', head: '#eef2ff', accent: '#65e9ff', stripe: '#a855f7', belly: '#e7ebff', eye: '#fff1b8', glow: 'rgba(101, 233, 255, 0.34)', pattern: 'orbit', label: '#f8fbff', bgA: '#070b2d', bgB: '#1a062b' },
+    { key: 'wormholewyrm', name: 'Wormhole Wyrm', emoji: '🌀', price: 176, desc: 'Folded-space indigo coils with cyan tunnel rings and violet tear-light drifting through the void.', body: '#101436', head: '#eef2ff', accent: '#65e9ff', stripe: '#a855f7', belly: '#e7ebff', eye: '#fff1b8', glow: 'rgba(101, 233, 255, 0.34)', pattern: 'orbit', fxVariant: 'nebula', label: '#f8fbff', bgA: '#070b2d', bgB: '#1a062b' },
     { key: 'quasarrail', name: 'Quasar Rail', emoji: '💫', price: 232, desc: 'A star-lanced rail look with cobalt armor, white-hot seams, and blinding comet wake lines.', body: '#0b1330', head: '#f4f8ff', accent: '#7cf8ff', stripe: '#ffd369', belly: '#eef5ff', eye: '#ffffff', glow: 'rgba(124, 248, 255, 0.36)', pattern: 'orbit', label: '#ffffff', bgA: '#050d26', bgB: '#180c3f' },
-    { key: 'eventhorizon', name: 'Event Horizon', emoji: '🎯', price: 312, desc: 'An original black-hole marksman finish inspired by sleek sniper energy: obsidian shell, white-metal rails, ember slit lights, and a red optic burn.', body: '#06080d', head: '#eef3fb', accent: '#ff5b2e', stripe: '#f5f7ff', belly: '#d8dfeb', eye: '#ffb54f', glow: 'rgba(255, 91, 46, 0.4)', pattern: 'horizon', label: '#fffdf9', bgA: '#050608', bgB: '#24080c' },
-    { key: 'singularity', name: 'Singularity', emoji: '🕳️', price: 388, desc: 'Collapsed-space royal void with cyan lensing, violet gravity arcs, and impossible light curling around a dead-black core.', body: '#04050a', head: '#edf1ff', accent: '#7f5cff', stripe: '#58f7e8', belly: '#dbe0ff', eye: '#ffe27a', glow: 'rgba(127, 92, 255, 0.42)', pattern: 'singularity', label: '#fcfdff', bgA: '#050613', bgB: '#21052b' }
+    { key: 'eventhorizon', name: 'Event Horizon', emoji: '🎯', price: 312, desc: 'An original black-hole marksman finish inspired by sleek sniper energy: obsidian shell, white-metal rails, ember slit lights, and a red optic burn.', body: '#06080d', head: '#eef3fb', accent: '#ff5b2e', stripe: '#f5f7ff', belly: '#d8dfeb', eye: '#ffb54f', glow: 'rgba(255, 91, 46, 0.4)', pattern: 'horizon', fxVariant: 'blackhole', label: '#fffdf9', bgA: '#050608', bgB: '#24080c' },
+    { key: 'accretioncrown', name: 'Accretion Crown', emoji: '🌠', price: 328, desc: 'Dead-black armor wrapped in a white-hot accretion ring with royal violet lens flare cutting through the dark.', body: '#04060c', head: '#eef3ff', accent: '#ffb86b', stripe: '#8b5cf6', belly: '#dce5ff', eye: '#fff2b7', glow: 'rgba(255, 184, 107, 0.42)', pattern: 'accretion', fxVariant: 'blackhole', label: '#fffdf8', bgA: '#050816', bgB: '#22071d' },
+    { key: 'eclipsemaw', name: 'Eclipse Maw', emoji: '🌘', price: 344, desc: 'A solar-eclipse predator finish with a gold-white crescent, ember corona burn, and a pitch-dark bite line.', body: '#040508', head: '#fff2da', accent: '#ffbe0b', stripe: '#ff6b35', belly: '#efe5d4', eye: '#fff7c6', glow: 'rgba(255, 190, 11, 0.42)', pattern: 'eclipse', fxVariant: 'blackhole', label: '#fffdfa', bgA: '#0a0a12', bgB: '#311007' },
+    { key: 'nebulashroud', name: 'Nebula Shroud', emoji: '🌌', price: 368, desc: 'Midnight scales flooded with pink-cyan nebula gas, tiny stars, and galaxy haze spilling over the whole body.', body: '#090d1b', head: '#f2e9ff', accent: '#ff68d6', stripe: '#58f7e8', belly: '#e7edff', eye: '#ffffff', glow: 'rgba(255, 104, 214, 0.42)', pattern: 'nebula', fxVariant: 'nebula', label: '#fffafe', bgA: '#090b1e', bgB: '#220a36' },
+    { key: 'voidcathedral', name: 'Void Cathedral', emoji: '🕳️', price: 416, desc: 'Impossible cathedral-black plating with cyan lensing arches and a center that looks way too deep to be real.', body: '#020308', head: '#eef4ff', accent: '#7cf8ff', stripe: '#9b7cff', belly: '#d7def7', eye: '#ffe27a', glow: 'rgba(124, 248, 255, 0.44)', pattern: 'accretion', fxVariant: 'blackhole', label: '#fbfdff', bgA: '#040713', bgB: '#1d0627' },
+    { key: 'singularity', name: 'Singularity', emoji: '🕳️', price: 388, desc: 'Collapsed-space royal void with cyan lensing, violet gravity arcs, and impossible light curling around a dead-black core.', body: '#04050a', head: '#edf1ff', accent: '#7f5cff', stripe: '#58f7e8', belly: '#dbe0ff', eye: '#ffe27a', glow: 'rgba(127, 92, 255, 0.42)', pattern: 'singularity', fxVariant: 'blackhole', label: '#fcfdff', bgA: '#050613', bgB: '#21052b' },
+    { key: 'gravitonreign', name: 'Graviton Reign', emoji: '👑', price: 452, desc: 'An absurd endgame black-hole sovereign with white accretion fire, royal violet fractures, and comet-cold cyan drag.', body: '#02030a', head: '#f8fbff', accent: '#9d7cff', stripe: '#63f2ff', belly: '#e4e8ff', eye: '#fff1b0', glow: 'rgba(157, 124, 255, 0.46)', pattern: 'singularity', fxVariant: 'blackhole', label: '#ffffff', bgA: '#040611', bgB: '#2a0737' }
   ];
 
   // Moderate the shop economy so skins usually take 1 to 2 achievement payouts.
@@ -243,6 +251,7 @@
   let tickMs = baseTickMs;
   let accumulator = 0;
   let lastFrameTime = 0;
+  let lastTurnPreviewAt = 0;
   let nextTongueAt = 0;
   let tongueVisibleUntil = 0;
   let activePortals = [];
@@ -273,6 +282,7 @@
   let jackpotLuckBonusActive = false;
   let realmMessage = '';
   let realmMessageUntil = 0;
+  let stageBanner = null;
   let currentScreen = 'home';
   let endlessMode = false;
   let playerName = 'Player';
@@ -304,6 +314,8 @@
   const coinEconomyVersion = '2';
   const saveSnapshotVersion = 1;
   const saveLinkParam = 'save';
+  const localWebCopyUrl = 'http://127.0.0.1:8000/';
+  const localSyncEndpoint = `${localWebCopyUrl}__snake_sync__`;
   const playerNameStorageKey = 'snakePlayerName';
   const bestScoreStorageKey = 'snakeBestScore';
   const ownedSkinsStorageKey = 'snakeOwnedSkins';
@@ -312,6 +324,7 @@
   const lifetimeStatsStorageKey = 'snakeLifetimeStats';
   const dockNoticeStorageKey = 'snakeDockNoticeSeen';
   const leaderboardOverrideStorageKey = 'snakeLeaderboardOverridePermanent';
+  const angelAutoPickStorageKey = 'snakeAngelAutoPickChoice';
   const activeProfileStorageKey = 'snakeActiveProfileId';
   const profileStoragePrefix = 'snakeProfile:';
   const cheatCatalog = [
@@ -347,9 +360,13 @@
   let coins = 0;
   let comboCount = 0;
   let comboTimer = 0;
+  let roundDamageTaken = 0;
+  let perfectRoundChain = 0;
   let pendingBlessingChoices = 0;
   let currentBlessingOptions = [];
   let blessingSelectionOpen = false;
+  let angelAutoPickChoice = 0;
+  let blessingAutoPickTimer = null;
   let bestScore = 0;
   let ownedSkins = ['classic'];
   let equippedSkin = 'classic';
@@ -452,44 +469,66 @@
     { key: 'ranked', title: 'Ranked', desc: 'Post a qualifying endless score.', reward: 10, target: 1, progress: () => lifetimeStats.leaderboardEntries || 0 }
   ];
 
-  try {
-    const savedName = localStorage.getItem(playerNameStorageKey);
-    if (savedName) playerName = savedName;
-    coins = Number.parseInt(localStorage.getItem(coinStorageKey) || '0', 10) || 0;
-    bestScore = Number.parseInt(localStorage.getItem(bestScoreStorageKey) || '0', 10) || 0;
-    const savedOwnedSkins = JSON.parse(localStorage.getItem(ownedSkinsStorageKey) || '["classic"]');
-    if (Array.isArray(savedOwnedSkins) && savedOwnedSkins.length) ownedSkins = [...new Set(savedOwnedSkins)];
-    const savedEquippedSkin = localStorage.getItem(equippedSkinStorageKey);
-    if (savedEquippedSkin) equippedSkin = savedEquippedSkin;
-    spinReadyAt = Number.parseInt(localStorage.getItem(spinReadyAtStorageKey) || '0', 10) || 0;
-    const rawChallengeState = localStorage.getItem(challengeStateStorageKey);
-    if (rawChallengeState) challengeState = JSON.parse(rawChallengeState);
-    const rawMissionStreak = localStorage.getItem(missionStreakStorageKey);
-    if (rawMissionStreak) missionStreak = JSON.parse(rawMissionStreak);
-    const rawAchievements = localStorage.getItem(achievementStorageKey);
-    if (rawAchievements) achievements = JSON.parse(rawAchievements);
-    const rawLifetimeStats = localStorage.getItem(lifetimeStatsStorageKey);
-    if (rawLifetimeStats) lifetimeStats = JSON.parse(rawLifetimeStats);
-    const rawDockNoticeSeen = localStorage.getItem(dockNoticeStorageKey);
-    if (rawDockNoticeSeen) dockNoticeSeen = JSON.parse(rawDockNoticeSeen);
-    const savedAudioEnabled = localStorage.getItem(audioEnabledStorageKey);
-    if (savedAudioEnabled === '0') audioEnabled = false;
-    leaderboardAbuseMode = localStorage.getItem(leaderboardOverrideStorageKey) === '1';
-    const savedActiveProfileId = localStorage.getItem(activeProfileStorageKey);
-    if (savedActiveProfileId) activeProfileId = savedActiveProfileId;
-    const savedEconomyVersion = localStorage.getItem(coinEconomyVersionKey);
-    if (savedEconomyVersion !== coinEconomyVersion) {
-      coins = 0;
+  const savedName = readStorageText(playerNameStorageKey);
+  if (savedName) playerName = savedName;
+
+  coins = Number.parseInt(readStorageText(coinStorageKey) || '0', 10) || 0;
+  bestScore = Number.parseInt(readStorageText(bestScoreStorageKey) || '0', 10) || 0;
+
+  const ownedSkinsState = readStorageJson(ownedSkinsStorageKey, ['classic']);
+  if (Array.isArray(ownedSkinsState.value) && ownedSkinsState.value.length) {
+    ownedSkins = [...new Set(ownedSkinsState.value)];
+  }
+
+  const savedEquippedSkin = readStorageText(equippedSkinStorageKey);
+  if (savedEquippedSkin) equippedSkin = savedEquippedSkin;
+
+  spinReadyAt = Number.parseInt(readStorageText(spinReadyAtStorageKey) || '0', 10) || 0;
+
+  const challengeStateState = readStorageJson(challengeStateStorageKey, null);
+  challengeState = challengeStateState.value;
+
+  const missionStreakState = readStorageJson(missionStreakStorageKey, { count: 0, best: 0, lastCompletedDate: '' });
+  missionStreak = missionStreakState.value;
+
+  const achievementState = readStorageJson(achievementStorageKey, {});
+  achievements = achievementState.value;
+
+  const lifetimeStatsState = readStorageJson(lifetimeStatsStorageKey, {});
+  lifetimeStats = lifetimeStatsState.value;
+
+  const dockNoticeSeenState = readStorageJson(dockNoticeStorageKey, {});
+  dockNoticeSeen = dockNoticeSeenState.value;
+
+  const savedAudioEnabled = readStorageText(audioEnabledStorageKey);
+  if (savedAudioEnabled === '0') audioEnabled = false;
+
+  leaderboardAbuseMode = readStorageText(leaderboardOverrideStorageKey) === '1';
+  angelAutoPickChoice = clampAngelAutoPickChoice(readStorageText(angelAutoPickStorageKey));
+
+  const savedActiveProfileId = readStorageText(activeProfileStorageKey);
+  if (savedActiveProfileId) activeProfileId = savedActiveProfileId;
+
+  const savedEconomyVersion = readStorageText(coinEconomyVersionKey);
+  if (savedEconomyVersion !== coinEconomyVersion) {
+    coins = 0;
+    try {
       localStorage.setItem(coinStorageKey, '0');
       localStorage.setItem(coinEconomyVersionKey, coinEconomyVersion);
+    } catch {
+      // ignore storage errors
     }
-  } catch {
-    // ignore storage errors
   }
 
   normalizeMissionStreak();
   normalizeLifetimeStats();
   normalizeDockNoticeSeen();
+  normalizeSkinState();
+  const achievementsNormalizedOnLoad = normalizeAchievements();
+  const restoredAchievementsOnLoad = restoreAchievementsWithoutRewards();
+  if (achievementsNormalizedOnLoad && restoredAchievementsOnLoad === 0) {
+    saveAchievements();
+  }
   endlessLeaderboard = loadEndlessLeaderboard();
   ensureChallengeState();
 
@@ -503,6 +542,33 @@
 
   function boardGrowthCapLevel() {
     return maxGridSize - baseGridSize + 1;
+  }
+
+  function getVisualFxQuality() {
+    if (reducedMotionQuery?.matches) return 0;
+
+    let quality = 2;
+    const threadCount = navigator.hardwareConcurrency || 6;
+    const memory = navigator.deviceMemory || 6;
+    const deviceScale = window.devicePixelRatio || 1;
+
+    if (threadCount <= 4) quality -= 1;
+    if (memory <= 4) quality -= 1;
+    if (deviceScale >= 2.2) quality -= 1;
+    if (currentGridSize() >= 18) quality -= 1;
+    if ((snake.length || 0) >= 18) quality -= 1;
+
+    return Math.max(0, quality);
+  }
+
+  function getSnakeRenderDetailLevel() {
+    const quality = getVisualFxQuality();
+    const cellSize = currentCellSize();
+    const length = snake.length || 0;
+
+    if (quality <= 0 || cellSize <= 26 || length >= 28) return 0;
+    if (quality === 1 || cellSize <= 34 || length >= 18) return 1;
+    return 2;
   }
 
   function randomBetween(min, max) {
@@ -552,6 +618,10 @@
     return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
   }
 
+  function clampAngelAutoPickChoice(value) {
+    return Math.min(3, Math.max(0, Number.parseInt(value ?? '0', 10) || 0));
+  }
+
   function saveAudioPreference() {
     try {
       localStorage.setItem(audioEnabledStorageKey, audioEnabled ? '1' : '0');
@@ -569,6 +639,24 @@
       return JSON.parse(JSON.stringify(value ?? fallback));
     } catch {
       return fallback;
+    }
+  }
+
+  function readStorageText(key) {
+    try {
+      return localStorage.getItem(key);
+    } catch {
+      return null;
+    }
+  }
+
+  function readStorageJson(key, fallback = null) {
+    const raw = readStorageText(key);
+    if (!raw) return { exists: false, error: false, value: fallback };
+    try {
+      return { exists: true, error: false, value: JSON.parse(raw) };
+    } catch {
+      return { exists: true, error: true, value: fallback };
     }
   }
 
@@ -633,6 +721,7 @@
       dockNoticeSeen: cloneJson(dockNoticeSeen, {}),
       endlessLeaderboard: cloneJson(endlessLeaderboard, []),
       leaderboardAbuseMode,
+      angelAutoPickChoice,
       audioEnabled,
       dailyRewardAt: Number.parseInt(localStorage.getItem(dailyRewardStorageKey) || '0', 10) || 0
     };
@@ -673,6 +762,7 @@
       dockNoticeSeen: snapshot.dockNoticeSeen && typeof snapshot.dockNoticeSeen === 'object' ? snapshot.dockNoticeSeen : {},
       endlessLeaderboard: Array.isArray(snapshot.endlessLeaderboard) ? snapshot.endlessLeaderboard.slice(0, 10) : [],
       leaderboardAbuseMode: !!snapshot.leaderboardAbuseMode,
+      angelAutoPickChoice: clampAngelAutoPickChoice(snapshot.angelAutoPickChoice),
       audioEnabled: snapshot.audioEnabled !== false,
       dailyRewardAt: Math.max(0, Number.parseInt(snapshot.dailyRewardAt || '0', 10) || 0)
     };
@@ -695,6 +785,7 @@
     dockNoticeSeen = sanitized.dockNoticeSeen;
     endlessLeaderboard = sanitized.endlessLeaderboard;
     leaderboardAbuseMode = sanitized.leaderboardAbuseMode;
+    angelAutoPickChoice = sanitized.angelAutoPickChoice;
     audioEnabled = sanitized.audioEnabled;
     leaderboardOverrideCharges = 0;
     leaderboardOverrideUsedThisRun = false;
@@ -706,11 +797,14 @@
     achievementToastQueue = [];
     achievementToastUntil = 0;
     activeAchievementToastSignature = '';
+    clearBlessingAutoPickTimer();
 
     normalizeMissionStreak();
     normalizeLifetimeStats();
     normalizeDockNoticeSeen();
     normalizeSkinState();
+    normalizeAchievements();
+    restoreAchievementsWithoutRewards();
 
     try {
       localStorage.setItem(playerNameStorageKey, playerName);
@@ -730,9 +824,11 @@
     saveLifetimeStats();
     saveDockNoticeSeen();
     saveLeaderboardOverrideMode();
+    saveAngelAutoPickChoice();
     saveAudioPreference();
     saveEndlessLeaderboard();
     renderAudioButtons();
+    renderBlessingAutoPickControls();
 
     clearJackpotMode();
     currentScreen = 'home';
@@ -759,11 +855,57 @@
     }
   }
 
-  function buildPortableSaveLink() {
-    const url = new URL(window.location.href);
+  function buildSaveLinkForUrl(baseUrl) {
+    const url = new URL(baseUrl, window.location.href);
     url.searchParams.set(saveLinkParam, encodeSaveSnapshot());
     url.hash = '';
     return url.toString();
+  }
+
+  function buildPortableSaveLink() {
+    return buildSaveLinkForUrl(window.location.href);
+  }
+
+  function openLocalWebCopyWithSave() {
+    syncCurrentSaveToLocalWeb()
+      .then(() => {
+        window.location.href = localWebCopyUrl;
+      })
+      .catch(() => {
+        window.location.href = buildSaveLinkForUrl(localWebCopyUrl);
+      });
+  }
+
+  async function syncCurrentSaveToLocalWeb() {
+    const response = await fetch(localSyncEndpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        snapshot: buildSaveSnapshot(),
+        source: 'file-copy',
+        savedAt: Date.now()
+      })
+    });
+    if (!response.ok) throw new Error('sync failed');
+  }
+
+  async function maybeImportPendingLocalSync() {
+    if (window.location.protocol !== 'http:' && window.location.protocol !== 'https:') return false;
+    try {
+      const response = await fetch(localSyncEndpoint, { cache: 'no-store' });
+      if (!response.ok) return false;
+      const payload = await response.json();
+      const snapshot = payload?.snapshot;
+      if (!snapshot || !applySaveSnapshot(snapshot, 'Richard file save')) return false;
+      activeProfileId = '';
+      saveActiveProfileId();
+      setAccountNotice('Richard file save loaded here and replaced the old 127 save.');
+      updateView();
+      await fetch(localSyncEndpoint, { method: 'DELETE' }).catch(() => {});
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   async function copyTextValue(value, fallbackLabel = 'value') {
@@ -865,7 +1007,7 @@
     }
     activeProfileId = '';
     saveActiveProfileId();
-    setAccountNotice('Imported save loaded. Local account login cleared until you log in again.');
+    setAccountNotice('Imported save loaded. It replaced the save on this version. Local account login cleared until you log in again.');
     updateView();
   }
 
@@ -877,7 +1019,7 @@
     if (snapshot && applySaveSnapshot(snapshot, 'Save link')) {
       activeProfileId = '';
       saveActiveProfileId();
-      setAccountNotice('Save link imported automatically. Local account login cleared until you log in again.');
+      setAccountNotice('Save link imported automatically. It replaced the save on this version. Local account login cleared until you log in again.');
     } else {
       setAccountNotice('Save link was found, but it could not be imported.');
     }
@@ -1397,7 +1539,16 @@
     }
   }
 
+  function saveAngelAutoPickChoice() {
+    try {
+      localStorage.setItem(angelAutoPickStorageKey, String(angelAutoPickChoice));
+    } catch {
+      // ignore storage errors
+    }
+  }
+
   function saveAchievements() {
+    normalizeAchievements();
     try {
       localStorage.setItem(achievementStorageKey, JSON.stringify(achievements));
     } catch {
@@ -1417,6 +1568,43 @@
     if (!dockNoticeSeen || typeof dockNoticeSeen !== 'object' || Array.isArray(dockNoticeSeen)) {
       dockNoticeSeen = {};
     }
+  }
+
+  function normalizeAchievements() {
+    const validDefs = new Map(achievementDefs.map(def => [def.key, def]));
+    if (!achievements || typeof achievements !== 'object' || Array.isArray(achievements)) {
+      achievements = {};
+      return true;
+    }
+
+    let changed = false;
+    const normalized = {};
+    Object.entries(achievements).forEach(([key, value]) => {
+      const def = validDefs.get(key);
+      if (!def) {
+        changed = true;
+        return;
+      }
+
+      if (!value || typeof value !== 'object' || Array.isArray(value)) {
+        normalized[key] = {
+          unlockedAt: '',
+          reward: def.reward || 0,
+          restored: true
+        };
+        changed = true;
+        return;
+      }
+
+      normalized[key] = {
+        ...value,
+        unlockedAt: typeof value.unlockedAt === 'string' ? value.unlockedAt : '',
+        reward: Math.max(0, Number.parseInt(value.reward ?? def.reward ?? 0, 10) || 0)
+      };
+    });
+
+    achievements = normalized;
+    return changed;
   }
 
   function saveDockNoticeSeen() {
@@ -1450,6 +1638,7 @@
       cheatRoomsFound: 0,
       angelEntries: 0,
       bossDefeats: 0,
+      perfectRounds: 0,
       skinsBought: 0,
       missionsClaimed: 0,
       eventsClaimed: 0,
@@ -1466,6 +1655,37 @@
     });
   }
 
+  function restoreAchievementsWithoutRewards() {
+    normalizeLifetimeStats();
+    normalizeSkinState();
+    normalizeAchievements();
+
+    let restoredCount = 0;
+    let restoredSkin = false;
+    const restoredAt = new Date().toISOString();
+
+    for (const def of achievementDefs) {
+      if (achievementUnlocked(def.key)) continue;
+      if ((def.progress?.() || 0) < def.target) continue;
+
+      achievements[def.key] = {
+        unlockedAt: restoredAt,
+        reward: def.reward || 0,
+        restored: true
+      };
+      restoredCount += 1;
+
+      if (def.skinReward && !isSkinOwned(def.skinReward)) {
+        ownedSkins.push(def.skinReward);
+        restoredSkin = true;
+      }
+    }
+
+    if (restoredSkin) saveOwnedSkins();
+    if (restoredCount > 0) saveAchievements();
+    return restoredCount;
+  }
+
   function incrementStat(key, amount = 1) {
     normalizeLifetimeStats();
     lifetimeStats[key] = Math.max(0, (lifetimeStats[key] || 0) + amount);
@@ -1473,7 +1693,7 @@
   }
 
   function achievementUnlocked(key) {
-    return !!achievements[key];
+    return !!(achievements && Object.prototype.hasOwnProperty.call(achievements, key));
   }
 
   function getAchievementRewardText(def) {
@@ -1895,9 +2115,10 @@
     const outcome = resolveLuckySpinOutcome();
     const segments = buildSpinSegments();
     const highlightIndex = spinHighlightIndexForOutcome(outcome, segments);
-    const durationMs = 4200 + (Math.floor(Math.random() * 3) * 300);
-    const fullTurns = 9 + randomBetween(0, 2);
-    const rotationDeg = -((fullTurns * 360) + (highlightIndex * 45));
+    const segmentAngle = 360 / Math.max(1, segments.length);
+    const durationMs = 5600 + (Math.floor(Math.random() * 3) * 360);
+    const fullTurns = 12 + randomBetween(0, 3);
+    const rotationDeg = -((fullTurns * 360) + (highlightIndex * segmentAngle));
     const token = ++spinAnimationToken;
 
     spinAnimationState = {
@@ -2063,84 +2284,95 @@
         return {
           slug: tier.slug,
           variant,
-          interval: variant === 'angelic' ? 84 : 116,
-          burst: variant === 'angelic' ? 3 : 2,
-          spread: variant === 'angelic' ? 0.62 : 0.44,
-          speed: variant === 'angelic' ? 0.66 : 0.52,
-          lifeMin: 22,
-          lifeMax: 40,
+          interval: variant === 'angelic' ? 74 : 96,
+          burst: variant === 'angelic' ? 4 : 3,
+          spread: variant === 'angelic' ? 0.7 : 0.56,
+          speed: variant === 'angelic' ? 0.76 : 0.62,
+          lifeMin: 24,
+          lifeMax: 44,
           radiusMin: 1.7,
-          radiusMax: variant === 'angelic' ? 3.3 : 2.9,
+          radiusMax: variant === 'angelic' ? 3.7 : 3.2,
           shapes: variant === 'angelic' ? ['ring', 'shard', 'circle'] : ['ring', 'circle', 'diamond'],
           colors: variant === 'angelic'
             ? ['rgba(124, 248, 255, 0.96)', 'rgba(255, 244, 191, 0.92)', 'rgba(255,255,255,0.94)', 'rgba(151, 214, 255, 0.82)']
             : ['rgba(124, 248, 255, 0.95)', 'rgba(225, 255, 255, 0.92)', 'rgba(151, 214, 255, 0.76)', 'rgba(255,255,255,0.82)'],
           alpha: 0.94,
           drag: 0.989,
-          lineWidth: variant === 'angelic' ? 1.7 : 1.5,
-          twinkle: variant === 'angelic' ? 0.0024 : 0.0015,
-          trailLift: variant === 'angelic' ? -0.11 : -0.05
+          lineWidth: variant === 'angelic' ? 1.8 : 1.6,
+          twinkle: variant === 'angelic' ? 0.0026 : 0.0018,
+          trailLift: variant === 'angelic' ? -0.13 : -0.07
         };
-      case 'cosmic':
+      case 'cosmic': {
+        const isNebula = variant === 'nebula';
         return {
           slug: tier.slug,
           variant,
-          interval: 108,
-          burst: 3,
-          spread: 0.6,
-          speed: 0.82,
-          lifeMin: 22,
-          lifeMax: 40,
+          interval: isNebula ? 82 : 94,
+          burst: isNebula ? 5 : 4,
+          spread: isNebula ? 0.74 : 0.64,
+          speed: isNebula ? 0.92 : 0.86,
+          lifeMin: 24,
+          lifeMax: isNebula ? 46 : 42,
           radiusMin: 1.6,
-          radiusMax: 3.1,
-          shapes: ['circle', 'diamond', 'ring'],
-          colors: ['rgba(143, 156, 255, 0.94)', 'rgba(255, 255, 255, 0.96)', 'rgba(88, 247, 232, 0.82)', 'rgba(127, 92, 255, 0.76)'],
+          radiusMax: isNebula ? 3.5 : 3.2,
+          shapes: isNebula ? ['circle', 'diamond', 'ring', 'shard'] : ['circle', 'diamond', 'ring'],
+          colors: isNebula
+            ? ['rgba(255, 104, 214, 0.92)', 'rgba(143, 156, 255, 0.92)', 'rgba(88, 247, 232, 0.84)', 'rgba(255,255,255,0.94)']
+            : ['rgba(143, 156, 255, 0.94)', 'rgba(255, 255, 255, 0.96)', 'rgba(88, 247, 232, 0.82)', 'rgba(127, 92, 255, 0.76)'],
           alpha: 0.92,
           drag: 0.99,
-          lineWidth: 1.45,
-          twinkle: 0.0026,
-          trailLift: -0.04
+          lineWidth: isNebula ? 1.6 : 1.5,
+          twinkle: isNebula ? 0.0031 : 0.0028,
+          trailLift: isNebula ? -0.06 : -0.05
         };
+      }
       case 'ascendant':
         return {
           slug: tier.slug,
           variant,
-          interval: 98,
-          burst: 3,
-          spread: 0.54,
-          speed: 0.78,
-          lifeMin: 22,
-          lifeMax: 38,
+          interval: 84,
+          burst: 4,
+          spread: 0.6,
+          speed: 0.88,
+          lifeMin: 24,
+          lifeMax: 42,
           radiusMin: 1.8,
-          radiusMax: 3.2,
+          radiusMax: 3.4,
           shapes: ['shard', 'diamond', 'ring'],
           colors: ['rgba(255, 224, 138, 0.96)', 'rgba(255, 249, 214, 0.96)', 'rgba(255, 158, 99, 0.78)', 'rgba(255,255,255,0.84)'],
           alpha: 0.95,
           drag: 0.988,
-          lineWidth: 1.6,
-          twinkle: 0.0021,
-          trailLift: -0.1
+          lineWidth: 1.7,
+          twinkle: 0.0024,
+          trailLift: -0.12
         };
-      case 'snakeifying':
+      case 'snakeifying': {
+        const isBlackhole = variant === 'blackhole';
+        const isNebula = variant === 'nebula';
         return {
           slug: tier.slug,
           variant,
-          interval: 78,
-          burst: 4,
-          spread: 0.7,
-          speed: 0.96,
-          lifeMin: 26,
-          lifeMax: 46,
-          radiusMin: 1.9,
-          radiusMax: 3.8,
-          shapes: ['ring', 'diamond', 'shard', 'circle'],
-          colors: ['rgba(255, 139, 224, 0.98)', 'rgba(127, 92, 255, 0.96)', 'rgba(255, 241, 250, 0.9)', 'rgba(88, 247, 232, 0.78)'],
-          alpha: 0.96,
+          interval: isBlackhole ? 54 : (isNebula ? 62 : 68),
+          burst: isBlackhole ? 6 : 5,
+          spread: isBlackhole ? 0.84 : (isNebula ? 0.8 : 0.74),
+          speed: isBlackhole ? 1.08 : 1,
+          lifeMin: 30,
+          lifeMax: isBlackhole ? 58 : 52,
+          radiusMin: 2,
+          radiusMax: isBlackhole ? 4.6 : 4.1,
+          shapes: isBlackhole ? ['ring', 'diamond', 'shard', 'circle'] : ['circle', 'diamond', 'ring', 'shard'],
+          colors: isBlackhole
+            ? ['rgba(255, 139, 224, 0.98)', 'rgba(127, 92, 255, 0.98)', 'rgba(88, 247, 232, 0.88)', 'rgba(255, 241, 250, 0.94)', 'rgba(16, 18, 33, 0.72)']
+            : isNebula
+              ? ['rgba(255, 104, 214, 0.96)', 'rgba(143, 156, 255, 0.94)', 'rgba(88, 247, 232, 0.86)', 'rgba(255,255,255,0.9)']
+              : ['rgba(255, 139, 224, 0.98)', 'rgba(127, 92, 255, 0.96)', 'rgba(255, 241, 250, 0.9)', 'rgba(88, 247, 232, 0.78)'],
+          alpha: 0.97,
           drag: 0.992,
-          lineWidth: 1.8,
-          twinkle: 0.0034,
-          trailLift: -0.06
+          lineWidth: isBlackhole ? 2.1 : 1.95,
+          twinkle: isBlackhole ? 0.0042 : 0.0038,
+          trailLift: isBlackhole ? -0.08 : -0.07
         };
+      }
       default:
         return null;
     }
@@ -2161,6 +2393,96 @@
       `--skin-shine:${art.shine}`,
       `--skin-tier:${art.tier.color}`
     ].join(';');
+  }
+
+  function getTierRibbonProfile(skin = getActiveSkin()) {
+    const tier = getSkinTier(skin);
+    const rank = tierOrderMap[tier.slug] ?? 0;
+    if (rank <= tierOrderMap.mythic) return null;
+
+    const art = getSkinArtProfile(skin);
+    const variant = skin?.fxVariant || art.pattern || tier.slug;
+    const base = {
+      glow: art.glow,
+      outerWidth: 0.48,
+      innerWidth: 0.18,
+      outerAlpha: 0.24,
+      innerAlpha: 0.66,
+      shadowBlur: 0.58,
+      pulseSpeed: 0.004,
+      nodeStep: 2,
+      nodeRadius: 0.11,
+      nodeSize: 0.05,
+      nodeAlpha: 0.72,
+      colors: [art.accent, art.stripe, art.head, art.accent],
+      coreColor: 'rgba(255,255,255,0.42)'
+    };
+
+    if (tier.slug === 'divine') {
+      return {
+        ...base,
+        outerWidth: 0.42,
+        innerWidth: 0.16,
+        outerAlpha: 0.18,
+        innerAlpha: 0.54,
+        shadowBlur: 0.46,
+        nodeRadius: 0.09,
+        nodeAlpha: 0.46,
+        colors: ['rgba(255,255,255,0.82)', art.stripe, art.accent, 'rgba(255,255,255,0.72)'],
+        coreColor: 'rgba(255,255,255,0.52)'
+      };
+    }
+
+    if (tier.slug === 'cosmic') {
+      return {
+        ...base,
+        outerWidth: 0.5,
+        innerWidth: 0.18,
+        outerAlpha: variant === 'nebula' ? 0.28 : 0.24,
+        innerAlpha: 0.6,
+        shadowBlur: 0.62,
+        nodeStep: 2,
+        nodeRadius: 0.12,
+        colors: variant === 'nebula'
+          ? [art.accent, art.stripe, art.head, 'rgba(255,255,255,0.72)']
+          : [art.stripe, art.accent, art.head, art.stripe],
+        coreColor: 'rgba(255,255,255,0.48)'
+      };
+    }
+
+    if (tier.slug === 'ascendant') {
+      return {
+        ...base,
+        outerWidth: 0.54,
+        innerWidth: 0.2,
+        outerAlpha: 0.26,
+        innerAlpha: 0.64,
+        shadowBlur: 0.68,
+        nodeStep: 2,
+        nodeRadius: 0.12,
+        nodeAlpha: 0.7,
+        colors: [art.accent, art.stripe, art.head, 'rgba(255,255,255,0.68)'],
+        coreColor: 'rgba(255,249,214,0.56)'
+      };
+    }
+
+    return {
+      ...base,
+      outerWidth: variant === 'blackhole' ? 0.62 : 0.58,
+      innerWidth: variant === 'blackhole' ? 0.24 : 0.21,
+      outerAlpha: variant === 'blackhole' ? 0.36 : 0.32,
+      innerAlpha: variant === 'blackhole' ? 0.82 : 0.72,
+      shadowBlur: variant === 'blackhole' ? 0.8 : 0.72,
+      pulseSpeed: variant === 'blackhole' ? 0.0052 : 0.0046,
+      nodeStep: 1,
+      nodeRadius: variant === 'blackhole' ? 0.15 : 0.13,
+      nodeSize: variant === 'blackhole' ? 0.06 : 0.052,
+      nodeAlpha: 0.84,
+      colors: variant === 'blackhole'
+        ? [art.accent, art.stripe, art.head, art.stripe, art.accent]
+        : [art.accent, art.head, art.stripe, art.accent],
+      coreColor: variant === 'blackhole' ? 'rgba(255,255,255,0.72)' : 'rgba(255,241,250,0.58)'
+    };
   }
 
   function getDailyShopSpotlight() {
@@ -2411,6 +2733,7 @@
       const currentTransferHost = window.location.protocol === 'file:'
         ? 'file copy'
         : `${window.location.hostname || 'localhost'}:${window.location.port || (window.location.protocol === 'https:' ? '443' : '80')}`;
+      const isFileCopy = window.location.protocol === 'file:';
       infoTitleEl.textContent = 'account';
       infoSubtitleEl.textContent = 'This game saves in this browser on this device for this site address. Use transfer links or save codes to move progress between copies.';
       infoContentEl.innerHTML = `
@@ -2429,7 +2752,8 @@
           </div>
           <div class="info-card">
             <strong>Transfer</strong>
-            <div>Move your progress between the file version and the localhost version.</div>
+            <div>${isFileCopy ? 'Move this file-copy save into the 127 local web copy. The imported save will replace the 127 save.' : 'Move your progress between the file version and the localhost version.'}</div>
+            ${isFileCopy ? '<button class="info-action" type="button" data-action="open-local-web-save">Open 127 copy with this save</button>' : ''}
             <button class="info-action" type="button" data-action="copy-save-link">Copy transfer link</button>
             <button class="info-action alt" type="button" data-action="copy-save-code">Copy save code</button>
             <button class="info-action alt" type="button" data-action="import-save">Import save link/code</button>
@@ -2515,6 +2839,7 @@
         ['Cheats used', lifetimeStats.cheatsUsed || 0],
         ...(lifetimeStats.angelEntries > 0 ? [['Angel entries', lifetimeStats.angelEntries || 0]] : []),
         ...(lifetimeStats.bossDefeats > 0 ? [['Boss defeats', lifetimeStats.bossDefeats || 0]] : []),
+        ...(lifetimeStats.perfectRounds > 0 ? [['Flawless rounds', lifetimeStats.perfectRounds || 0]] : []),
         ['Mission claims', lifetimeStats.missionsClaimed || 0],
         ['Event claims', lifetimeStats.eventsClaimed || 0],
         ['Leaderboard posts', lifetimeStats.leaderboardEntries || 0],
@@ -2546,13 +2871,16 @@
       const activeSpin = spinAnimationState;
       const segments = activeSpin?.segments || buildSpinSegments();
       const highlightIndex = activeSpin?.highlightIndex ?? -1;
+      const segmentAngle = 360 / Math.max(1, segments.length);
+      const segmentDistance = segments.length >= 10 ? 114 : 122;
       const ready = Date.now() >= spinReadyAt;
       const spinning = !!activeSpin?.spinning;
       const settled = !!activeSpin && !activeSpin.spinning;
       const statusText = spinning ? 'Wheel spinning now' : (ready ? 'Ready now' : `Next spin in ${spinCooldownLabel()}`);
-      const wheelStyle = activeSpin ? ` style="--spin-target:${activeSpin.rotationDeg || (-45 * highlightIndex)}deg;--spin-duration:${activeSpin.durationMs || 4200}ms"` : '';
+      const wheelTarget = activeSpin?.rotationDeg ?? (-(segmentAngle * Math.max(0, highlightIndex)));
+      const wheelStyle = ` style="--spin-target:${wheelTarget}deg;--spin-duration:${activeSpin?.durationMs || 5600}ms;--segment-angle:${segmentAngle}deg;--segment-distance:${segmentDistance}px"`;
       infoTitleEl.textContent = 'lucky spin';
-      infoSubtitleEl.textContent = 'The wheel now takes a longer, smoother full run before it locks onto the reward.';
+      infoSubtitleEl.textContent = 'The wheel now takes a longer, smoother full run with a cleaner lock-on at the end.';
       infoContentEl.innerHTML = `
         <div class="spin-stage${spinning ? ' spinning' : ''}${settled ? ' settled' : ''}${activeSpin?.rare ? ' rare' : ''}">
           <div class="spin-wheel-shell">
@@ -2846,6 +3174,7 @@
     gameOver = true;
     paused = false;
     blessingSelectionOpen = false;
+    clearBlessingAutoPickTimer();
     clearCountdown();
     triggerScreenJuice(14, 0.22, 'rgba(255, 82, 82, 0.2)');
     playUiSfx('gameover');
@@ -2866,7 +3195,46 @@
     return pool.sort(() => Math.random() - 0.5).slice(0, count);
   }
 
+  function renderBlessingAutoPickControls() {
+    if (!abilityAutoPickButtons.length) return;
+    abilityAutoPickButtons.forEach(button => {
+      const buttonValue = clampAngelAutoPickChoice(button.dataset.autoBlessing);
+      const active = buttonValue === angelAutoPickChoice;
+      button.classList.toggle('is-active', active);
+      button.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
+  }
+
+  function clearBlessingAutoPickTimer() {
+    if (blessingAutoPickTimer === null) return;
+    window.clearTimeout(blessingAutoPickTimer);
+    blessingAutoPickTimer = null;
+  }
+
+  function maybeScheduleBlessingAutoPick() {
+    clearBlessingAutoPickTimer();
+    const optionIndex = angelAutoPickChoice - 1;
+    const option = currentBlessingOptions[optionIndex];
+    if (!angelRealm || !blessingSelectionOpen || currentScreen !== 'game' || gameOver || !option) return;
+
+    blessingAutoPickTimer = window.setTimeout(() => {
+      blessingAutoPickTimer = null;
+      if (!angelRealm || !blessingSelectionOpen || currentScreen !== 'game' || gameOver) return;
+      const autoOption = currentBlessingOptions[angelAutoPickChoice - 1];
+      if (autoOption) chooseBlessing(autoOption.key);
+    }, blessingAutoPickDelayMs);
+  }
+
+  function setAngelAutoPickChoice(value) {
+    angelAutoPickChoice = clampAngelAutoPickChoice(value);
+    saveAngelAutoPickChoice();
+    renderBlessingAutoPickControls();
+    if (angelAutoPickChoice > 0) maybeScheduleBlessingAutoPick();
+    else clearBlessingAutoPickTimer();
+  }
+
   function renderBlessingChoices() {
+    renderBlessingAutoPickControls();
     if (!abilityChoicesEl) return;
     abilityChoicesEl.innerHTML = '';
 
@@ -2893,6 +3261,7 @@
     accumulator = 0;
     renderBlessingChoices();
     updateHud();
+    maybeScheduleBlessingAutoPick();
   }
 
   function applyBlessing(key) {
@@ -2934,6 +3303,7 @@
   }
 
   function chooseBlessing(key) {
+    clearBlessingAutoPickTimer();
     const picked = currentBlessingOptions.find(option => option.key === key);
     if (!picked) return;
 
@@ -2992,7 +3362,13 @@
     if (!directionQueue.length) nextDirection = turn;
     directionQueue.push(turn);
     if (directionQueue.length > 3) directionQueue.shift();
-    if (currentScreen === 'game' && !gameOver && window.location.hash !== '#cheats') draw(performance.now());
+    if (currentScreen === 'game' && !gameOver && !paused && window.location.hash !== '#cheats') {
+      const now = performance.now();
+      if (getVisualFxQuality() > 0 && now - lastTurnPreviewAt > 48) {
+        lastTurnPreviewAt = now;
+        draw(now);
+      }
+    }
   }
 
   function setDockLabel(button, fullLabel, visibleLabel = fullLabel) {
@@ -3024,59 +3400,61 @@
     }
 
     if (playerNameLabel) playerNameLabel.textContent = playerName;
-    if (coinBankLabel) coinBankLabel.textContent = formatCount(coins);
-    if (shopCoinLabel) shopCoinLabel.textContent = formatCount(coins);
-    if (cheatCoinLabel) cheatCoinLabel.textContent = formatCount(coins);
+    if (coinBankLabel && onHome) coinBankLabel.textContent = formatCount(coins);
+    if (shopCoinLabel && onHome && shopOpen) shopCoinLabel.textContent = formatCount(coins);
+    if (cheatCoinLabel && inCheatRoom) cheatCoinLabel.textContent = formatCount(coins);
     if (gameModeLabel) {
       gameModeLabel.textContent = angelRealm ? 'Angel Realm' : (endlessMode ? 'Endless Run' : 'Normal Run');
     }
     if (gameOverTitleEl) {
       gameOverTitleEl.textContent = endlessMode ? 'Endless Run Over' : 'Game Over';
     }
-    setDockLabel(leaderboardBtn, 'Leaderboard', 'Ranks');
-    setDockBadge(leaderboardBtn);
-    const unlockedAchievements = achievementDefs.filter(def => achievementUnlocked(def.key)).length;
-    const achievementNotice = hasUnseenDockNotice('achievements');
-    setDockLabel(achievementsBtn, `Achievements ${unlockedAchievements}/${achievementDefs.length}`, 'Goals');
-    setDockBadge(achievementsBtn, achievementNotice ? unlockedAchievements : '');
-    setDockLabel(statsBtn, 'Stats', 'Data');
-    setDockBadge(statsBtn, hasUnseenDockNotice('stats') ? '!' : '');
-    setDockLabel(guideBtn, 'Guide', 'Guide');
-    setDockBadge(guideBtn);
-    const spinReady = Date.now() >= spinReadyAt;
-    const spinNotice = hasUnseenDockNotice('spin');
-    setDockLabel(spinBtn, spinReady ? 'Lucky Spin' : `Spin ${spinCooldownLabel()}`, 'Spin');
-    if (spinBtn) spinBtn.classList.toggle('reward-ready', spinNotice);
-    setDockBadge(spinBtn, spinNotice ? '!' : '');
-    setDockLabel(changeNameBtn, activeProfileId ? `Account ${activeProfileId}` : 'Account & Save', 'Account');
-    setDockBadge(changeNameBtn);
-    const missionReadyCount = (challengeState?.missions || []).filter(mission => mission.progress >= mission.target && !mission.claimed).length;
-    const eventNotice = hasUnseenDockNotice('event');
-    const missionNotice = hasUnseenDockNotice('missions');
-    const missionBadge = missionNotice ? missionReadyCount : '';
-    const missionLabel = missionNotice
-      ? `Missions ${formatCount(missionReadyCount)} ready • Streak ${formatCount(missionStreak.count)}`
-      : (missionStreak.count > 0 ? `Missions • Streak ${formatCount(missionStreak.count)}` : 'Missions');
-    setDockLabel(eventsBtn, eventNotice ? 'Event Ready' : 'Events', 'Events');
-    if (eventsBtn) eventsBtn.classList.toggle('reward-ready', eventNotice);
-    setDockBadge(eventsBtn, eventNotice ? '!' : '');
-    setDockLabel(missionsBtn, missionLabel, 'Tasks');
-    if (missionsBtn) missionsBtn.classList.toggle('reward-ready', missionNotice);
-    setDockBadge(missionsBtn, missionBadge);
-    setDockLabel(shopBtn, 'Shop', 'Shop');
-    const shopNotice = hasUnseenDockNotice('shop');
-    setDockBadge(shopBtn, shopNotice ? '★' : '');
-    if (dailyRewardBtn) {
-      const rewardState = getDailyRewardState();
-      dailyRewardBtn.disabled = false;
-      dailyRewardBtn.classList.toggle('reward-ready', rewardState.ready);
-      setDockLabel(dailyRewardBtn, rewardState.ready ? 'Daily reward ready' : `Daily reward in ${rewardState.label}`, rewardState.ready ? 'Ready' : rewardState.shortLabel);
-      setDockBadge(dailyRewardBtn, rewardState.ready ? '!' : '');
-    }
-    if (fullscreenBtn) {
-      const label = getFullscreenElement() ? 'Exit fullscreen' : 'Fullscreen';
-      setDockLabel(fullscreenBtn, label, 'Full');
-      setDockBadge(fullscreenBtn);
+    if (onHome) {
+      setDockLabel(leaderboardBtn, 'Leaderboard', 'Ranks');
+      setDockBadge(leaderboardBtn);
+      const unlockedAchievements = achievementDefs.filter(def => achievementUnlocked(def.key)).length;
+      const achievementNotice = hasUnseenDockNotice('achievements');
+      setDockLabel(achievementsBtn, `Achievements ${unlockedAchievements}/${achievementDefs.length}`, 'Goals');
+      setDockBadge(achievementsBtn, achievementNotice ? unlockedAchievements : '');
+      setDockLabel(statsBtn, 'Stats', 'Data');
+      setDockBadge(statsBtn, hasUnseenDockNotice('stats') ? '!' : '');
+      setDockLabel(guideBtn, 'Guide', 'Guide');
+      setDockBadge(guideBtn);
+      const spinReady = Date.now() >= spinReadyAt;
+      const spinNotice = hasUnseenDockNotice('spin');
+      setDockLabel(spinBtn, spinReady ? 'Lucky Spin' : `Spin ${spinCooldownLabel()}`, 'Spin');
+      if (spinBtn) spinBtn.classList.toggle('reward-ready', spinNotice);
+      setDockBadge(spinBtn, spinNotice ? '!' : '');
+      setDockLabel(changeNameBtn, activeProfileId ? `Account ${activeProfileId}` : 'Account & Save', 'Account');
+      setDockBadge(changeNameBtn);
+      const missionReadyCount = (challengeState?.missions || []).filter(mission => mission.progress >= mission.target && !mission.claimed).length;
+      const eventNotice = hasUnseenDockNotice('event');
+      const missionNotice = hasUnseenDockNotice('missions');
+      const missionBadge = missionNotice ? missionReadyCount : '';
+      const missionLabel = missionNotice
+        ? `Missions ${formatCount(missionReadyCount)} ready • Streak ${formatCount(missionStreak.count)}`
+        : (missionStreak.count > 0 ? `Missions • Streak ${formatCount(missionStreak.count)}` : 'Missions');
+      setDockLabel(eventsBtn, eventNotice ? 'Event Ready' : 'Events', 'Events');
+      if (eventsBtn) eventsBtn.classList.toggle('reward-ready', eventNotice);
+      setDockBadge(eventsBtn, eventNotice ? '!' : '');
+      setDockLabel(missionsBtn, missionLabel, 'Tasks');
+      if (missionsBtn) missionsBtn.classList.toggle('reward-ready', missionNotice);
+      setDockBadge(missionsBtn, missionBadge);
+      setDockLabel(shopBtn, 'Shop', 'Shop');
+      const shopNotice = hasUnseenDockNotice('shop');
+      setDockBadge(shopBtn, shopNotice ? '★' : '');
+      if (dailyRewardBtn) {
+        const rewardState = getDailyRewardState();
+        dailyRewardBtn.disabled = false;
+        dailyRewardBtn.classList.toggle('reward-ready', rewardState.ready);
+        setDockLabel(dailyRewardBtn, rewardState.ready ? 'Daily reward ready' : `Daily reward in ${rewardState.label}`, rewardState.ready ? 'Ready' : rewardState.shortLabel);
+        setDockBadge(dailyRewardBtn, rewardState.ready ? '!' : '');
+      }
+      if (fullscreenBtn) {
+        const label = getFullscreenElement() ? 'Exit fullscreen' : 'Fullscreen';
+        setDockLabel(fullscreenBtn, label, 'Full');
+        setDockBadge(fullscreenBtn);
+      }
     }
     if (gameFullscreenBtn) {
       const isFullscreen = Boolean(getFullscreenElement());
@@ -3095,9 +3473,9 @@
       realmXpWrap.classList.toggle('hidden', !showRealmXp);
     }
 
-    renderShop();
-    renderInfoPanel();
-    renderCheatRoom();
+    if (shopOpen && onHome) renderShop();
+    if (infoPanel && onHome) renderInfoPanel();
+    if (currentScreen === 'game' && inCheatRoom) renderCheatRoom();
     renderAchievementToast();
 
     if (infoOverlay) infoOverlay.classList.toggle('hidden', !infoPanel || !onHome);
@@ -3107,7 +3485,6 @@
     if (homePage) homePage.classList.toggle('hidden', !onHome);
     gamePage.classList.toggle('hidden', currentScreen !== 'game' || inCheatRoom);
     cheatPage.classList.toggle('hidden', currentScreen !== 'game' || !inCheatRoom);
-    syncAudioState();
   }
 
   function currentMaxRounds() {
@@ -3139,6 +3516,7 @@
     if (angelRealm) incrementStat('angelEntries', 1);
     resetGame(false, true);
     showRealmMessage(angelRealm ? 'Angel Realm awakened' : (endlessMode ? 'Endless mode' : 'Normal mode'), 1400);
+    announceCurrentStage(2200);
     playUiSfx('start');
     updateView();
   }
@@ -3156,6 +3534,10 @@
   }
 
   function returnHome() {
+    clearBlessingAutoPickTimer();
+    blessingSelectionOpen = false;
+    currentBlessingOptions = [];
+    stageBanner = null;
     clearJackpotMode();
     currentScreen = 'home';
     shopOpen = false;
@@ -3184,6 +3566,87 @@
   function showRealmMessage(message, duration = 1600) {
     realmMessage = message;
     realmMessageUntil = performance.now() + duration;
+  }
+
+  function showStageBanner(title, subtitle = '', duration = 1900, tone = 'normal') {
+    const startedAt = performance.now();
+    stageBanner = {
+      title: String(title || '').trim(),
+      subtitle: String(subtitle || '').trim(),
+      tone,
+      startedAt,
+      until: startedAt + duration
+    };
+  }
+
+  function getStageFlavor(targetLevel = level, targetRound = round) {
+    const modeKey = angelRealm ? 'angel' : (endlessMode ? 'endless' : 'normal');
+    const bank = modeKey === 'angel'
+      ? ['Halo Corridor', 'Ivory Storm', 'Sun Choir', 'Choirglass Run', 'Seraph Steps', 'Heavenrail Drift', 'Goldwing Spiral', 'Radiant Lattice']
+      : modeKey === 'endless'
+        ? ['Infinite Lattice', 'Void Sprint', 'Afterlight Loop', 'Turbo Singularity', 'Neon Everrun', 'Chrome Afterburn', 'Nightdrive Circuit', 'Starvault Spiral']
+        : ['Neon Orchard', 'Chrome Maze', 'Turbo Circuit', 'Emerald Run', 'Pixel Garden', 'Sunset Grid', 'Arcade Drift', 'Stormline Track'];
+    const seed = Math.abs(hashString(`${modeKey}:${targetLevel}:${targetRound}`));
+    return bank[seed % bank.length];
+  }
+
+  function announceCurrentStage(duration = 1900) {
+    const title = angelRealm
+      ? `Angel Realm • ${formatCount(level)}-${formatCount(round)}`
+      : endlessMode
+        ? `Endless • Round ${formatCount(round)}`
+        : `Level ${formatCount(level)} • Round ${formatCount(round)}`;
+    showStageBanner(title, getStageFlavor(level, round), duration, angelRealm ? 'angel' : (endlessMode ? 'endless' : 'normal'));
+  }
+
+  function resetRoundPerformance() {
+    roundDamageTaken = 0;
+  }
+
+  function awardFlawlessRoundBonus() {
+    if (roundDamageTaken > 0 || !snake[0]) {
+      perfectRoundChain = 0;
+      return false;
+    }
+
+    perfectRoundChain += 1;
+    incrementStat('perfectRounds', 1);
+    const bonusCoins = 2 + Math.min(4, Math.floor(level / 3)) + (angelRealm ? 1 : 0) + (endlessMode ? 1 : 0) + Math.min(2, perfectRoundChain - 1);
+    addCoins(bonusCoins);
+    emitParticles(snake[0].x, snake[0].y, 14, ['rgba(255,255,255,0.98)', 'rgba(124,248,255,0.94)', 'rgba(255,211,105,0.92)']);
+    emitFloatingText(snake[0].x, snake[0].y, `Flawless +${formatCount(bonusCoins)}`, '#dffcff', { life: 38, scale: 1.12 });
+    showStageBanner(
+      perfectRoundChain >= 3 ? 'Flawless Chain' : 'Flawless Clear',
+      `+${formatCount(bonusCoins)} coins${perfectRoundChain > 1 ? ` • Chain x${formatCount(perfectRoundChain)}` : ''}`,
+      1800,
+      'perfect'
+    );
+    showRealmMessage(`Flawless clear bonus +${formatCount(bonusCoins)}`, 1600);
+    return true;
+  }
+
+  function maybeAdvanceBossPhase() {
+    if (!boss?.active) return;
+
+    const phases = [
+      { threshold: 0.75, title: 'Halo Break', subtitle: 'The hymn starts cracking' },
+      { threshold: 0.5, title: 'Judgement Arc', subtitle: 'Lances split the sky' },
+      { threshold: 0.25, title: 'Final Hymn', subtitle: 'The realm turns brutal' }
+    ];
+
+    while (boss.phaseIndex < phases.length && (boss.hp / boss.maxHp) <= phases[boss.phaseIndex].threshold) {
+      const phase = phases[boss.phaseIndex];
+      boss.phaseIndex += 1;
+      boss.lastVolleyAt = 0;
+      boss.lastLaserAt = 0;
+      boss.lastBeamAt = 0;
+      triggerScreenJuice(8, 0.16, 'rgba(255, 224, 138, 0.16)');
+      if (snake[0]) {
+        emitParticles(snake[0].x, snake[0].y, 18, ['rgba(255,255,255,0.98)', 'rgba(255,236,130,0.95)', 'rgba(124,248,255,0.9)']);
+      }
+      showStageBanner(phase.title, phase.subtitle, 2200, 'boss');
+      showRealmMessage(phase.title, 1600);
+    }
   }
 
   function pulseHudPill(target) {
@@ -3293,7 +3756,10 @@
   function pushParticle(spec) {
     const life = Math.max(1, spec.life ?? 18);
     const grid = currentGridSize();
-    const cap = grid >= 19 ? 72 : grid >= 14 ? 96 : 128;
+    const fxQuality = getVisualFxQuality();
+    let cap = grid >= 19 ? 72 : grid >= 14 ? 96 : 128;
+    if (fxQuality === 1) cap = Math.max(32, Math.round(cap * 0.78));
+    if (fxQuality === 0) cap = Math.max(24, Math.round(cap * 0.55));
     if (particles.length >= cap) {
       particles.splice(0, Math.max(1, particles.length - cap + 1));
     }
@@ -3320,6 +3786,7 @@
     if (invincible || amount <= 0) return;
     const reducedAmount = roundHealthValue(Math.max(1, amount - abilities.shield));
     playerHealth = roundHealthValue(Math.max(0, playerHealth - reducedAmount));
+    roundDamageTaken = roundHealthValue(roundDamageTaken + reducedAmount);
     emitParticles(hitX, hitY, 10, ['rgba(255,255,255,0.95)', 'rgba(255,225,120,0.9)']);
     emitFloatingText(hitX, hitY, `-${formatHealthValue(reducedAmount)} HP`, '#ffb8b8', { life: 30, scale: 1.05 });
     triggerScreenJuice(9, 0.14, 'rgba(255, 92, 92, 0.18)');
@@ -3562,12 +4029,15 @@
       lastAltarAt: 0,
       lastLaserAt: 0,
       lastBeamAt: 0,
+      phaseIndex: 0,
       active: true
     };
+    resetRoundPerformance();
     audioState.lastBossHumAt = 0;
     altar = randomEmptyCell();
     playBossSfx('enter');
     showRealmMessage('Arch Angel descends', 2400);
+    showStageBanner('Arch Angel', 'Celestial Judgement', 2600, 'boss');
   }
 
   function markBossAttack(type, duration = 680) {
@@ -3584,6 +4054,7 @@
   function setupLevel(resetSnakePosition = true) {
     const spawnSafety = roundSpawnSafety('food');
     const obstacleSafety = roundSpawnSafety('hazard');
+    resetRoundPerformance();
     obstacles = [];
     bonusApples = [];
     food = null;
@@ -3637,14 +4108,18 @@
     screenFlashColor = 'rgba(255,255,255,0.14)';
     comboCount = 0;
     comboTimer = 0;
+    stageBanner = null;
     xp = 0;
     xpLevel = 1;
     abilities = { vigor: 0, reflex: 0, luck: 0, shield: 0, bounty: 0 };
     if (jackpotMode && jackpotLuckBonusActive) abilities.luck = 1;
     lastHudHealthValue = null;
+    roundDamageTaken = 0;
+    perfectRoundChain = 0;
     pendingBlessingChoices = 0;
     currentBlessingOptions = [];
     blessingSelectionOpen = false;
+    clearBlessingAutoPickTimer();
     leaderboardSavedThisLife = false;
     lastLeaderboardResult = null;
     leaderboardOverrideUsedThisRun = false;
@@ -3797,6 +4272,7 @@
   }
 
   function drawSnakeMarkings(px, py, bodySize, palette, orientation, index, now = performance.now()) {
+    const detail = getSnakeRenderDetailLevel();
     const stripeThickness = Math.max(4, bodySize * 0.14);
 
     ctx.save();
@@ -3814,6 +4290,38 @@
       ctx.fill();
       roundedRectPath(px + bodySize * 0.18, py + bodySize * 0.42, bodySize * 0.64, stripeThickness, stripeThickness / 2);
       ctx.fill();
+    }
+
+    if (detail < 2) {
+      ctx.globalAlpha = detail === 1 ? 0.52 : 0.36;
+      ctx.fillStyle = palette.stripe;
+
+      if (orientation.horizontal && !orientation.vertical) {
+        roundedRectPath(px + bodySize * 0.26, py + bodySize * 0.22, bodySize * 0.18, bodySize * 0.14, bodySize * 0.06);
+        ctx.fill();
+        roundedRectPath(px + bodySize * 0.58, py + bodySize * 0.64, bodySize * 0.18, bodySize * 0.14, bodySize * 0.06);
+        ctx.fill();
+      } else if (orientation.vertical && !orientation.horizontal) {
+        roundedRectPath(px + bodySize * 0.22, py + bodySize * 0.26, bodySize * 0.14, bodySize * 0.18, bodySize * 0.06);
+        ctx.fill();
+        roundedRectPath(px + bodySize * 0.64, py + bodySize * 0.58, bodySize * 0.14, bodySize * 0.18, bodySize * 0.06);
+        ctx.fill();
+      } else {
+        ctx.beginPath();
+        ctx.arc(px + bodySize * 0.5, py + bodySize * 0.5, Math.max(1.8, bodySize * 0.08), 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      if (detail === 1) {
+        ctx.globalAlpha = 0.82;
+        ctx.fillStyle = palette.eye;
+        ctx.beginPath();
+        ctx.arc(px + bodySize * 0.5, py + bodySize * 0.5, Math.max(1.4, bodySize * 0.04), 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      ctx.restore();
+      return;
     }
 
     ctx.globalAlpha = 0.4;
@@ -3953,31 +4461,150 @@
         });
         break;
       case 'orbit':
-        ctx.globalAlpha = 0.74;
+        ctx.globalAlpha = 0.76;
         ctx.strokeStyle = palette.stripe;
         ctx.lineWidth = Math.max(1.4, bodySize * 0.04);
         ctx.beginPath();
-        ctx.ellipse(px + bodySize * 0.5, py + bodySize * 0.5, bodySize * 0.3, bodySize * 0.13, 0.28, 0, Math.PI * 2);
+        ctx.ellipse(
+          px + bodySize * 0.5,
+          py + bodySize * 0.5,
+          bodySize * 0.31,
+          bodySize * 0.13,
+          0.26 + Math.sin(now * 0.0018 + index * 0.4) * 0.12,
+          0,
+          Math.PI * 2
+        );
         ctx.stroke();
+        ctx.strokeStyle = palette.accent;
         ctx.beginPath();
-        ctx.ellipse(px + bodySize * 0.5, py + bodySize * 0.5, bodySize * 0.18, bodySize * 0.32, -0.32, 0, Math.PI * 2);
+        ctx.ellipse(
+          px + bodySize * 0.5,
+          py + bodySize * 0.5,
+          bodySize * 0.2,
+          bodySize * 0.34,
+          -0.34 + Math.cos(now * 0.0016 + index * 0.5) * 0.08,
+          0,
+          Math.PI * 2
+        );
         ctx.stroke();
 
-        ctx.globalAlpha = 0.92;
-        ctx.fillStyle = palette.accent;
-        const orbitNodes = [
-          [0.76, 0.38, 0.05],
-          [0.34, 0.24, 0.042],
-          [0.56, 0.76, 0.047]
-        ];
-        for (const [sx, sy, sr] of orbitNodes) {
+        ctx.globalAlpha = 0.32;
+        ctx.fillStyle = 'rgba(255,255,255,0.12)';
+        ctx.beginPath();
+        ctx.arc(px + bodySize * 0.5, py + bodySize * 0.5, bodySize * 0.13, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.globalAlpha = 0.94;
+        for (let node = 0; node < 3; node += 1) {
+          const angle = now * 0.003 + index * 0.36 + node * (Math.PI * 0.66);
+          const radiusX = node === 1 ? bodySize * 0.18 : bodySize * 0.29;
+          const radiusY = node === 1 ? bodySize * 0.31 : bodySize * 0.12;
+          const x = px + bodySize * 0.5 + Math.cos(angle) * radiusX;
+          const y = py + bodySize * 0.5 + Math.sin(angle) * radiusY;
+          ctx.fillStyle = node === 1 ? palette.eye : palette.accent;
           ctx.beginPath();
-          ctx.arc(px + bodySize * sx, py + bodySize * sy, Math.max(1.8, bodySize * sr), 0, Math.PI * 2);
+          ctx.arc(x, y, Math.max(1.8, bodySize * (node === 1 ? 0.04 : 0.046)), 0, Math.PI * 2);
           ctx.fill();
         }
         break;
+      case 'accretion': {
+        const tilt = 0.62 + Math.sin(now * 0.0019 + index * 0.45) * 0.12;
+        const swirl = now * 0.0034 + index * 0.55;
+        ctx.globalAlpha = 0.68;
+        ctx.fillStyle = 'rgba(0,0,0,0.58)';
+        ctx.beginPath();
+        ctx.arc(px + bodySize * 0.5, py + bodySize * 0.5, bodySize * 0.16, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.globalAlpha = 0.84;
+        ctx.strokeStyle = palette.stripe;
+        ctx.lineWidth = Math.max(1.6, bodySize * 0.044);
+        ctx.beginPath();
+        ctx.ellipse(px + bodySize * 0.5, py + bodySize * 0.5, bodySize * 0.33, bodySize * 0.11, tilt, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.strokeStyle = palette.accent;
+        ctx.lineWidth = Math.max(1.2, bodySize * 0.032);
+        ctx.beginPath();
+        ctx.ellipse(px + bodySize * 0.5, py + bodySize * 0.5, bodySize * 0.26, bodySize * 0.08, tilt, 0, Math.PI * 2);
+        ctx.stroke();
+
+        ctx.globalAlpha = 0.92;
+        for (let dust = 0; dust < 4; dust += 1) {
+          const angle = swirl + dust * (Math.PI / 2);
+          const x = px + bodySize * 0.5 + Math.cos(angle) * bodySize * 0.24;
+          const y = py + bodySize * 0.5 + Math.sin(angle) * bodySize * 0.09;
+          ctx.fillStyle = dust % 2 === 0 ? palette.eye : palette.accent;
+          ctx.beginPath();
+          ctx.arc(x, y, Math.max(1.4, bodySize * 0.032), 0, Math.PI * 2);
+          ctx.fill();
+        }
+        break;
+      }
+      case 'nebula':
+        ctx.globalAlpha = 0.26;
+        ctx.fillStyle = palette.stripe;
+        [
+          [0.3, 0.34, 0.22, 0.12, -0.3],
+          [0.58, 0.46, 0.24, 0.14, 0.18],
+          [0.44, 0.7, 0.18, 0.1, 0.42]
+        ].forEach(([sx, sy, rx, ry, rot]) => {
+          ctx.beginPath();
+          ctx.ellipse(px + bodySize * sx, py + bodySize * sy, bodySize * rx, bodySize * ry, rot, 0, Math.PI * 2);
+          ctx.fill();
+        });
+        ctx.globalAlpha = 0.34;
+        ctx.fillStyle = palette.accent;
+        [
+          [0.64, 0.28, 0.18, 0.1, 0.2],
+          [0.28, 0.64, 0.16, 0.09, -0.4]
+        ].forEach(([sx, sy, rx, ry, rot]) => {
+          ctx.beginPath();
+          ctx.ellipse(px + bodySize * sx, py + bodySize * sy, bodySize * rx, bodySize * ry, rot, 0, Math.PI * 2);
+          ctx.fill();
+        });
+        ctx.globalAlpha = 0.94;
+        ctx.fillStyle = palette.eye;
+        [
+          [0.22, 0.22, 0.03],
+          [0.76, 0.34, 0.026],
+          [0.62, 0.74, 0.024],
+          [0.36, 0.56, 0.022]
+        ].forEach(([sx, sy, sr]) => {
+          ctx.beginPath();
+          ctx.arc(px + bodySize * sx, py + bodySize * sy, Math.max(1.3, bodySize * sr), 0, Math.PI * 2);
+          ctx.fill();
+        });
+        break;
+      case 'eclipse': {
+        const flare = Math.sin(now * 0.0048 + index * 0.6) * bodySize * 0.014;
+        ctx.globalAlpha = 0.92;
+        ctx.fillStyle = palette.accent;
+        ctx.beginPath();
+        ctx.arc(px + bodySize * 0.57, py + bodySize * 0.48, bodySize * 0.18 + flare, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = 'rgba(0,0,0,0.74)';
+        ctx.beginPath();
+        ctx.arc(px + bodySize * 0.5, py + bodySize * 0.5, bodySize * 0.18, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.globalAlpha = 0.72;
+        ctx.strokeStyle = palette.stripe;
+        ctx.lineWidth = Math.max(1.3, bodySize * 0.036);
+        ctx.beginPath();
+        ctx.arc(px + bodySize * 0.5, py + bodySize * 0.5, bodySize * 0.29, now * 0.0032, now * 0.0032 + Math.PI * 0.9);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(px + bodySize * 0.5, py + bodySize * 0.5, bodySize * 0.34, -now * 0.0028, -now * 0.0028 + Math.PI * 0.74);
+        ctx.stroke();
+        break;
+      }
       case 'horizon':
-        ctx.globalAlpha = 0.82;
+        ctx.globalAlpha = 0.34;
+        ctx.fillStyle = 'rgba(0,0,0,0.24)';
+        roundedRectPath(px + bodySize * 0.12, py + bodySize * 0.12, bodySize * 0.76, bodySize * 0.76, bodySize * 0.1);
+        ctx.fill();
+
+        ctx.globalAlpha = 0.84;
         ctx.fillStyle = palette.stripe;
         if (orientation.vertical && !orientation.horizontal) {
           roundedRectPath(px + bodySize * 0.24, py + bodySize * 0.14, bodySize * 0.08, bodySize * 0.72, bodySize * 0.04);
@@ -4000,18 +4627,24 @@
         ctx.fillStyle = palette.eye;
         ctx.beginPath();
         ctx.arc(px + bodySize * 0.5, py + bodySize * 0.5, Math.max(1.8, bodySize * 0.045), 0, Math.PI * 2);
+        ctx.arc(px + bodySize * 0.32, py + bodySize * 0.5, Math.max(1.1, bodySize * 0.022), 0, Math.PI * 2);
+        ctx.arc(px + bodySize * 0.68, py + bodySize * 0.5, Math.max(1.1, bodySize * 0.022), 0, Math.PI * 2);
         ctx.fill();
         break;
       case 'singularity':
-        ctx.globalAlpha = 0.78;
+        ctx.globalAlpha = 0.82;
         ctx.strokeStyle = palette.stripe;
         ctx.lineWidth = Math.max(1.4, bodySize * 0.04);
         ctx.beginPath();
-        ctx.arc(px + bodySize * 0.5, py + bodySize * 0.5, bodySize * 0.26, now * 0.004 + index * 0.3, now * 0.004 + index * 0.3 + Math.PI * 1.35);
+        ctx.arc(px + bodySize * 0.5, py + bodySize * 0.5, bodySize * 0.28, now * 0.004 + index * 0.3, now * 0.004 + index * 0.3 + Math.PI * 1.45);
         ctx.stroke();
         ctx.strokeStyle = palette.accent;
         ctx.beginPath();
-        ctx.arc(px + bodySize * 0.5, py + bodySize * 0.5, bodySize * 0.18, -now * 0.003 - index * 0.2, -now * 0.003 - index * 0.2 + Math.PI * 1.2);
+        ctx.arc(px + bodySize * 0.5, py + bodySize * 0.5, bodySize * 0.2, -now * 0.003 - index * 0.2, -now * 0.003 - index * 0.2 + Math.PI * 1.28);
+        ctx.stroke();
+        ctx.strokeStyle = 'rgba(255,255,255,0.24)';
+        ctx.beginPath();
+        ctx.arc(px + bodySize * 0.5, py + bodySize * 0.5, bodySize * 0.36, now * 0.0017 + index * 0.15, now * 0.0017 + index * 0.15 + Math.PI * 0.82);
         ctx.stroke();
         ctx.globalAlpha = 0.56;
         ctx.fillStyle = 'rgba(0, 0, 0, 0.54)';
@@ -4023,6 +4656,7 @@
         ctx.beginPath();
         ctx.arc(px + bodySize * 0.72, py + bodySize * 0.34, Math.max(1.6, bodySize * 0.036), 0, Math.PI * 2);
         ctx.arc(px + bodySize * 0.3, py + bodySize * 0.68, Math.max(1.4, bodySize * 0.03), 0, Math.PI * 2);
+        ctx.arc(px + bodySize * 0.58, py + bodySize * 0.78, Math.max(1.2, bodySize * 0.026), 0, Math.PI * 2);
         ctx.fill();
         break;
       case 'diamond':
@@ -4168,12 +4802,38 @@
 
   function drawApple(item, now = performance.now()) {
     const size = currentCellSize();
+    const detail = getSnakeRenderDetailLevel();
     const pulse = 0.96 + Math.sin(now * 0.012 + item.x * 0.7 + item.y * 0.9) * 0.06;
     const cx = (item.x + 0.5) * size;
     const cy = (item.y + 0.56) * size;
     const scale = (size / 46) * pulse;
 
     ctx.save();
+    if (detail === 0 || size <= 30) {
+      const radius = Math.max(5, size * 0.24 * pulse);
+      ctx.shadowBlur = detail === 0 ? 0 : 8;
+      ctx.shadowColor = 'rgba(214, 52, 52, 0.24)';
+      ctx.fillStyle = '#df443a';
+      ctx.beginPath();
+      ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = 'rgba(255,255,255,0.28)';
+      ctx.beginPath();
+      ctx.arc(cx - radius * 0.24, cy - radius * 0.28, Math.max(1.8, radius * 0.26), 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.strokeStyle = '#6d3b19';
+      ctx.lineWidth = Math.max(1.4, size * 0.05);
+      ctx.beginPath();
+      ctx.moveTo(cx, cy - radius * 0.72);
+      ctx.lineTo(cx + radius * 0.14, cy - radius * 1.24);
+      ctx.stroke();
+      ctx.restore();
+      return;
+    }
+
     ctx.translate(cx, cy);
     ctx.scale(scale, scale);
     ctx.shadowBlur = 16;
@@ -4216,12 +4876,39 @@
 
   function drawPear(item, now = performance.now()) {
     const size = currentCellSize();
+    const detail = getSnakeRenderDetailLevel();
     const pulse = 0.95 + Math.sin(now * 0.011 + item.x * 0.6 + item.y * 0.8) * 0.05;
     const cx = (item.x + 0.5) * size;
     const cy = (item.y + 0.56) * size;
     const scale = (size / 48) * pulse;
 
     ctx.save();
+    if (detail === 0 || size <= 30) {
+      const radiusX = Math.max(4, size * 0.2 * pulse);
+      const radiusY = Math.max(6, size * 0.27 * pulse);
+      ctx.shadowBlur = detail === 0 ? 0 : 8;
+      ctx.shadowColor = 'rgba(108, 176, 66, 0.24)';
+      ctx.fillStyle = '#8dcf52';
+      ctx.beginPath();
+      ctx.ellipse(cx, cy + radiusY * 0.05, radiusX, radiusY, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = 'rgba(255,255,255,0.24)';
+      ctx.beginPath();
+      ctx.ellipse(cx - radiusX * 0.22, cy, Math.max(1.8, radiusX * 0.26), Math.max(2.6, radiusY * 0.22), -0.35, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.strokeStyle = '#765224';
+      ctx.lineWidth = Math.max(1.4, size * 0.05);
+      ctx.beginPath();
+      ctx.moveTo(cx, cy - radiusY * 0.9);
+      ctx.lineTo(cx + radiusX * 0.14, cy - radiusY * 1.45);
+      ctx.stroke();
+      ctx.restore();
+      return;
+    }
+
     ctx.translate(cx, cy);
     ctx.scale(scale, scale);
     ctx.shadowBlur = 16;
@@ -4266,6 +4953,7 @@
 
   function drawSnakeSegment(seg, index, now = performance.now(), drawX = seg.x, drawY = seg.y) {
     const size = currentCellSize();
+    const detail = getSnakeRenderDetailLevel();
     const palette = getSnakePalette();
     const orientation = getSegmentOrientation(index);
     const taper = Math.min(0.24, index * 0.024);
@@ -4278,28 +4966,34 @@
     const py = drawY * size + 4 + offset;
 
     ctx.save();
-    ctx.shadowBlur = 10;
+    ctx.shadowBlur = detail === 2 ? 10 : (detail === 1 ? 5 : 0);
     ctx.shadowColor = palette.glow;
 
-    const fill = ctx.createLinearGradient(px, py, px + bodySize, py + bodySize);
-    fill.addColorStop(0, palette.head);
-    fill.addColorStop(0.3, palette.accent);
-    fill.addColorStop(0.66, palette.body);
-    fill.addColorStop(1, palette.body);
-    ctx.fillStyle = fill;
+    if (detail === 2) {
+      const fill = ctx.createLinearGradient(px, py, px + bodySize, py + bodySize);
+      fill.addColorStop(0, palette.head);
+      fill.addColorStop(0.3, palette.accent);
+      fill.addColorStop(0.66, palette.body);
+      fill.addColorStop(1, palette.body);
+      ctx.fillStyle = fill;
+    } else {
+      ctx.fillStyle = detail === 1 ? palette.accent : palette.body;
+    }
     roundedRectPath(px, py, bodySize, bodySize, Math.max(8, bodySize * 0.22));
     ctx.fill();
 
     drawSnakeMarkings(px, py, bodySize, palette, orientation, index, now);
 
     ctx.shadowBlur = 0;
-    ctx.fillStyle = palette.shine;
-    ctx.beginPath();
-    ctx.ellipse(px + bodySize * 0.34, py + bodySize * 0.28, bodySize * 0.18, bodySize * 0.1, -0.35, 0, Math.PI * 2);
-    ctx.fill();
+    if (detail > 0) {
+      ctx.fillStyle = palette.shine;
+      ctx.beginPath();
+      ctx.ellipse(px + bodySize * 0.34, py + bodySize * 0.28, bodySize * 0.18, bodySize * 0.1, -0.35, 0, Math.PI * 2);
+      ctx.fill();
+    }
 
     ctx.strokeStyle = palette.outline;
-    ctx.lineWidth = Math.max(1.5, size * 0.04);
+    ctx.lineWidth = Math.max(detail === 0 ? 1.2 : 1.5, size * 0.04);
     roundedRectPath(px, py, bodySize, bodySize, Math.max(8, bodySize * 0.22));
     ctx.stroke();
 
@@ -4309,6 +5003,7 @@
 
   function drawHead(seg, now = performance.now(), drawX = seg.x, drawY = seg.y) {
     const size = currentCellSize();
+    const detail = getSnakeRenderDetailLevel();
     const palette = getSnakePalette();
     const facing = facingDirection();
     const breathe = 0.985 + Math.sin(now * 0.01) * 0.02;
@@ -4318,27 +5013,133 @@
     const py = drawY * size + 4 + offset;
 
     ctx.save();
-    ctx.shadowBlur = 12;
+    ctx.shadowBlur = detail === 2 ? 12 : (detail === 1 ? 6 : 0);
     ctx.shadowColor = palette.glow;
 
-    const fill = ctx.createLinearGradient(px, py, px + bodySize, py + bodySize);
-    fill.addColorStop(0, palette.head);
-    fill.addColorStop(0.55, palette.accent);
-    fill.addColorStop(1, palette.body);
-    ctx.fillStyle = fill;
+    if (detail === 2) {
+      const fill = ctx.createLinearGradient(px, py, px + bodySize, py + bodySize);
+      fill.addColorStop(0, palette.head);
+      fill.addColorStop(0.55, palette.accent);
+      fill.addColorStop(1, palette.body);
+      ctx.fillStyle = fill;
+    } else {
+      ctx.fillStyle = detail === 1 ? palette.head : palette.body;
+    }
     roundedRectPath(px, py, bodySize, bodySize, Math.max(10, bodySize * 0.26));
     ctx.fill();
 
     ctx.shadowBlur = 0;
-    ctx.fillStyle = palette.shine;
-    ctx.beginPath();
-    ctx.ellipse(px + bodySize * 0.34, py + bodySize * 0.28, bodySize * 0.2, bodySize * 0.11, -0.4, 0, Math.PI * 2);
-    ctx.fill();
+    if (detail > 0) {
+      ctx.fillStyle = palette.shine;
+      ctx.beginPath();
+      ctx.ellipse(px + bodySize * 0.34, py + bodySize * 0.28, bodySize * 0.2, bodySize * 0.11, -0.4, 0, Math.PI * 2);
+      ctx.fill();
+    }
 
     ctx.strokeStyle = palette.outline;
-    ctx.lineWidth = Math.max(2, size * 0.04);
+    ctx.lineWidth = Math.max(detail === 0 ? 1.4 : 2, size * 0.04);
     roundedRectPath(px, py, bodySize, bodySize, Math.max(10, bodySize * 0.26));
     ctx.stroke();
+
+    if (detail < 2) {
+      let eye1x = px + bodySize * 0.68;
+      let eye1y = py + bodySize * 0.3;
+      let eye2x = px + bodySize * 0.68;
+      let eye2y = py + bodySize * 0.7;
+      let mouthFromX = px + bodySize * 0.8;
+      let mouthFromY = py + bodySize * 0.42;
+      let mouthToX = px + bodySize * 0.8;
+      let mouthToY = py + bodySize * 0.58;
+      let tongueFromX = mouthToX;
+      let tongueFromY = (mouthFromY + mouthToY) / 2;
+      let tongueToX = tongueFromX + facing.x * bodySize * 0.22;
+      let tongueToY = tongueFromY + facing.y * bodySize * 0.22;
+
+      if (facing.x === -1) {
+        eye1x = px + bodySize * 0.32;
+        eye1y = py + bodySize * 0.3;
+        eye2x = px + bodySize * 0.32;
+        eye2y = py + bodySize * 0.7;
+        mouthFromX = px + bodySize * 0.2;
+        mouthToX = px + bodySize * 0.2;
+        tongueFromX = mouthToX;
+        tongueFromY = (mouthFromY + mouthToY) / 2;
+        tongueToX = tongueFromX - bodySize * 0.22;
+      } else if (facing.y === -1) {
+        eye1x = px + bodySize * 0.3;
+        eye1y = py + bodySize * 0.32;
+        eye2x = px + bodySize * 0.7;
+        eye2y = py + bodySize * 0.32;
+        mouthFromX = px + bodySize * 0.42;
+        mouthFromY = py + bodySize * 0.2;
+        mouthToX = px + bodySize * 0.58;
+        mouthToY = py + bodySize * 0.2;
+        tongueFromX = (mouthFromX + mouthToX) / 2;
+        tongueFromY = mouthToY;
+        tongueToX = tongueFromX;
+        tongueToY = tongueFromY - bodySize * 0.22;
+      } else if (facing.y === 1) {
+        eye1x = px + bodySize * 0.3;
+        eye1y = py + bodySize * 0.68;
+        eye2x = px + bodySize * 0.7;
+        eye2y = py + bodySize * 0.68;
+        mouthFromX = px + bodySize * 0.42;
+        mouthFromY = py + bodySize * 0.8;
+        mouthToX = px + bodySize * 0.58;
+        mouthToY = py + bodySize * 0.8;
+        tongueFromX = (mouthFromX + mouthToX) / 2;
+        tongueFromY = mouthToY;
+        tongueToX = tongueFromX;
+        tongueToY = tongueFromY + bodySize * 0.22;
+      }
+
+      ctx.fillStyle = palette.stripe;
+      if (Math.abs(facing.x) > 0) {
+        roundedRectPath(px + bodySize * 0.22, py + bodySize * 0.43, bodySize * 0.34, bodySize * 0.14, bodySize * 0.06);
+      } else {
+        roundedRectPath(px + bodySize * 0.43, py + bodySize * 0.22, bodySize * 0.14, bodySize * 0.34, bodySize * 0.06);
+      }
+      ctx.fill();
+
+      ctx.fillStyle = palette.eye;
+      ctx.beginPath();
+      ctx.arc(eye1x, eye1y, Math.max(2.2, bodySize * 0.074), 0, Math.PI * 2);
+      ctx.arc(eye2x, eye2y, Math.max(2.2, bodySize * 0.074), 0, Math.PI * 2);
+      ctx.fill();
+
+      if (detail === 1) {
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(eye1x + 1, eye1y - 1, Math.max(0.9, bodySize * 0.02), 0, Math.PI * 2);
+        ctx.arc(eye2x + 1, eye2y - 1, Math.max(0.9, bodySize * 0.02), 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      ctx.strokeStyle = palette.eye;
+      ctx.lineWidth = Math.max(1.8, size * 0.03);
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(mouthFromX, mouthFromY);
+      ctx.lineTo(mouthToX, mouthToY);
+      ctx.stroke();
+
+      if (now >= nextTongueAt) {
+        tongueVisibleUntil = now + tongueVisibleDurationMs;
+        scheduleTongue(now, false);
+      }
+
+      if (now < tongueVisibleUntil) {
+        ctx.strokeStyle = '#ff5f82';
+        ctx.lineWidth = Math.max(2, size * 0.04);
+        ctx.beginPath();
+        ctx.moveTo(tongueFromX, tongueFromY);
+        ctx.lineTo(tongueToX, tongueToY);
+        ctx.stroke();
+      }
+
+      ctx.restore();
+      return;
+    }
 
     let eye1x = px + bodySize * 0.68;
     let eye1y = py + bodySize * 0.28;
@@ -4529,21 +5330,83 @@
       roundedRectPath(px + bodySize * 0.38, py + bodySize * 0.1, bodySize * 0.24, bodySize * 0.06, bodySize * 0.03);
       ctx.fill();
       ctx.restore();
+    } else if (palette.pattern === 'accretion') {
+      ctx.save();
+      const crownTilt = 0.22 + Math.sin(now * 0.0032) * 0.08;
+      ctx.globalAlpha = 0.9;
+      ctx.strokeStyle = palette.stripe;
+      ctx.lineWidth = Math.max(1.2, bodySize * 0.028);
+      ctx.beginPath();
+      ctx.ellipse(px + bodySize * 0.5, py + bodySize * 0.12, bodySize * 0.22, bodySize * 0.07, crownTilt, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.strokeStyle = palette.accent;
+      ctx.beginPath();
+      ctx.ellipse(px + bodySize * 0.5, py + bodySize * 0.12, bodySize * 0.16, bodySize * 0.045, crownTilt, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.fillStyle = 'rgba(0,0,0,0.56)';
+      ctx.beginPath();
+      ctx.arc(px + bodySize * 0.5, py + bodySize * 0.12, Math.max(1.8, bodySize * 0.045), 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    } else if (palette.pattern === 'nebula') {
+      ctx.save();
+      ctx.globalAlpha = 0.3;
+      ctx.fillStyle = palette.stripe;
+      ctx.beginPath();
+      ctx.ellipse(px + bodySize * 0.34, py + bodySize * 0.13, bodySize * 0.16, bodySize * 0.075, -0.18, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse(px + bodySize * 0.66, py + bodySize * 0.11, bodySize * 0.14, bodySize * 0.065, 0.3, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = 0.92;
+      ctx.fillStyle = palette.eye;
+      ctx.beginPath();
+      ctx.arc(px + bodySize * 0.36, py + bodySize * 0.08, Math.max(1.2, bodySize * 0.022), 0, Math.PI * 2);
+      ctx.arc(px + bodySize * 0.62, py + bodySize * 0.1, Math.max(1.4, bodySize * 0.025), 0, Math.PI * 2);
+      ctx.arc(px + bodySize * 0.5, py + bodySize * 0.15, Math.max(1.2, bodySize * 0.02), 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    } else if (palette.pattern === 'eclipse') {
+      ctx.save();
+      ctx.globalAlpha = 0.92;
+      ctx.fillStyle = palette.accent;
+      ctx.beginPath();
+      ctx.arc(px + bodySize * 0.57, py + bodySize * 0.11, bodySize * 0.1, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = 'rgba(0,0,0,0.8)';
+      ctx.beginPath();
+      ctx.arc(px + bodySize * 0.51, py + bodySize * 0.11, bodySize * 0.1, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = 0.72;
+      ctx.strokeStyle = palette.stripe;
+      ctx.lineWidth = Math.max(1.2, bodySize * 0.028);
+      ctx.beginPath();
+      ctx.arc(px + bodySize * 0.5, py + bodySize * 0.12, bodySize * 0.18, Math.PI * 1.08, Math.PI * 1.9);
+      ctx.stroke();
+      ctx.restore();
     } else if (palette.pattern === 'singularity') {
       ctx.save();
       ctx.globalAlpha = 0.85;
       ctx.strokeStyle = palette.stripe;
       ctx.lineWidth = Math.max(1.2, bodySize * 0.03);
       ctx.beginPath();
-      ctx.arc(px + bodySize * 0.5, py + bodySize * 0.16, bodySize * 0.18, Math.PI * 1.08, Math.PI * 1.94);
+      ctx.arc(px + bodySize * 0.5, py + bodySize * 0.16, bodySize * 0.2, Math.PI * 1.02, Math.PI * 1.96);
       ctx.stroke();
       ctx.strokeStyle = palette.accent;
       ctx.beginPath();
-      ctx.arc(px + bodySize * 0.5, py + bodySize * 0.16, bodySize * 0.12, Math.PI * 1.18, Math.PI * 1.84);
+      ctx.arc(px + bodySize * 0.5, py + bodySize * 0.16, bodySize * 0.13, Math.PI * 1.14, Math.PI * 1.86);
+      ctx.stroke();
+      ctx.strokeStyle = 'rgba(255,255,255,0.24)';
+      ctx.beginPath();
+      ctx.arc(px + bodySize * 0.5, py + bodySize * 0.16, bodySize * 0.26, Math.PI * 1.14, Math.PI * 1.74);
       ctx.stroke();
       ctx.fillStyle = 'rgba(0,0,0,0.54)';
       ctx.beginPath();
       ctx.arc(px + bodySize * 0.5, py + bodySize * 0.14, Math.max(2, bodySize * 0.05), 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = palette.eye;
+      ctx.beginPath();
+      ctx.arc(px + bodySize * 0.67, py + bodySize * 0.11, Math.max(1.4, bodySize * 0.026), 0, Math.PI * 2);
       ctx.fill();
       ctx.restore();
     } else if (palette.pattern === 'horizon') {
@@ -4558,19 +5421,26 @@
       ctx.fillStyle = palette.eye;
       ctx.beginPath();
       ctx.arc(px + bodySize * 0.5, py + bodySize * 0.055, Math.max(1.6, bodySize * 0.03), 0, Math.PI * 2);
+      ctx.arc(px + bodySize * 0.38, py + bodySize * 0.1, Math.max(1.1, bodySize * 0.02), 0, Math.PI * 2);
+      ctx.arc(px + bodySize * 0.62, py + bodySize * 0.1, Math.max(1.1, bodySize * 0.02), 0, Math.PI * 2);
       ctx.fill();
       ctx.restore();
     } else if (palette.pattern === 'orbit') {
       ctx.save();
-      ctx.globalAlpha = 0.82;
+      ctx.globalAlpha = 0.86;
       ctx.strokeStyle = palette.stripe;
       ctx.lineWidth = Math.max(1.2, bodySize * 0.028);
       ctx.beginPath();
-      ctx.ellipse(px + bodySize * 0.5, py + bodySize * 0.14, bodySize * 0.18, bodySize * 0.07, 0, 0, Math.PI * 2);
+      ctx.ellipse(px + bodySize * 0.5, py + bodySize * 0.14, bodySize * 0.2, bodySize * 0.07, Math.sin(now * 0.0024) * 0.16, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.strokeStyle = palette.accent;
+      ctx.beginPath();
+      ctx.ellipse(px + bodySize * 0.5, py + bodySize * 0.14, bodySize * 0.11, bodySize * 0.17, -Math.sin(now * 0.0021) * 0.2, 0, Math.PI * 2);
       ctx.stroke();
       ctx.fillStyle = palette.accent;
       ctx.beginPath();
       ctx.arc(px + bodySize * 0.66, py + bodySize * 0.11, Math.max(1.6, bodySize * 0.03), 0, Math.PI * 2);
+      ctx.arc(px + bodySize * 0.36, py + bodySize * 0.18, Math.max(1.3, bodySize * 0.024), 0, Math.PI * 2);
       ctx.fill();
       ctx.restore();
     }
@@ -4933,8 +5803,22 @@
     const height = canvas.height;
     const time = now * 0.00016;
     const grid = currentGridSize();
-    const count = Math.min(14, Math.max(5, Math.round(grid * 0.42)));
-    const drawCrossFlares = grid <= 12;
+    const fxQuality = getVisualFxQuality();
+    const count = fxQuality === 0
+      ? Math.min(6, Math.max(3, Math.round(grid * 0.2)))
+      : fxQuality === 1
+        ? Math.min(10, Math.max(4, Math.round(grid * 0.32)))
+        : Math.min(14, Math.max(5, Math.round(grid * 0.42)));
+    const drawCrossFlares = fxQuality > 1 && grid <= 12;
+    const activeTier = getSkinTier(getActiveSkin());
+    const activeTierRank = tierOrderMap[activeTier.slug] ?? 0;
+    const meteorCap = fxQuality === 0 ? 1 : fxQuality === 1 ? 2 : 4;
+    const meteorCount = Math.min(meteorCap, Math.max(0,
+      (level >= 6 ? 1 : 0)
+      + (comboCount >= 6 ? 1 : 0)
+      + (activeTierRank >= tierOrderMap.cosmic ? 1 : 0)
+      + (activeTierRank >= tierOrderMap.snakeifying ? 1 : 0)
+    ));
     const glowHalo = angelRealm
       ? 'rgba(255, 246, 200, 0.18)'
       : jackpotMode
@@ -4985,6 +5869,40 @@
       }
     }
 
+    if (meteorCount > 0) {
+      for (let index = 0; index < meteorCount; index += 1) {
+        const seed = level * 0.91 + comboCount * 0.47 + index * 19.3 + activeTierRank * 0.6;
+        const travel = fract(Math.sin(seed * 4.17 + time * (11 + index * 1.7)) * 817.17);
+        const lane = fract(Math.sin(seed * 9.23) * 437.27);
+        const startX = width * (0.08 + lane * 0.84);
+        const startY = height * (-0.18 + travel * 1.26);
+        const length = 30 + activeTierRank * 2 + index * 10;
+        const endX = startX - length;
+        const endY = startY + length * 0.62;
+        ctx.globalAlpha = 0.28 + index * 0.08;
+        if (fxQuality === 0) {
+          ctx.strokeStyle = activeTierRank >= tierOrderMap.snakeifying ? 'rgba(255, 139, 224, 0.74)' : 'rgba(255, 244, 191, 0.68)';
+        } else {
+          const meteor = ctx.createLinearGradient(startX, startY, endX, endY);
+          meteor.addColorStop(0, activeTierRank >= tierOrderMap.snakeifying ? 'rgba(255, 139, 224, 0.92)' : 'rgba(255, 244, 191, 0.86)');
+          meteor.addColorStop(0.45, 'rgba(124, 248, 255, 0.46)');
+          meteor.addColorStop(1, 'rgba(124, 248, 255, 0)');
+          ctx.strokeStyle = meteor;
+        }
+        ctx.lineWidth = 1.6 + index * 0.34;
+        ctx.beginPath();
+        ctx.moveTo(startX, startY);
+        ctx.lineTo(endX, endY);
+        ctx.stroke();
+
+        ctx.globalAlpha = fxQuality === 0 ? 0.56 : 0.7;
+        ctx.fillStyle = activeTierRank >= tierOrderMap.snakeifying ? 'rgba(255,241,250,0.84)' : 'rgba(255,255,255,0.82)';
+        ctx.beginPath();
+        ctx.arc(startX, startY, 1.8 + index * 0.35, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
     ctx.restore();
   }
 
@@ -4992,12 +5910,21 @@
     if (!item) return;
 
     const size = currentCellSize();
+    const fxQuality = getVisualFxQuality();
     const cx = (item.x + 0.5) * size;
     const cy = (item.y + 0.5) * size;
     const pulse = 0.9 + Math.sin(now * (palette.speed || 0.01) + item.x * 0.7 + item.y * 0.9) * 0.08;
     const outer = size * (palette.radius || 0.56) * pulse;
     const inner = size * 0.14;
-    const sparkleCap = currentGridSize() >= 18 ? 1 : currentGridSize() >= 12 ? 2 : 3;
+    const sparkleCap = fxQuality === 0
+      ? 0
+      : fxQuality === 1
+        ? (currentGridSize() >= 14 ? 1 : 2)
+        : currentGridSize() >= 18
+          ? 1
+          : currentGridSize() >= 12
+            ? 2
+            : 3;
     const sparkleCount = Math.min(palette.sparkles || 2, sparkleCap);
 
     ctx.save();
@@ -5019,15 +5946,17 @@
     ctx.arc(cx, cy, outer * 0.86, 0, Math.PI * 2);
     ctx.stroke();
 
-    ctx.fillStyle = palette.spark || '#fff';
-    for (let index = 0; index < sparkleCount; index += 1) {
-      const angle = now * (palette.orbitSpeed || 0.0032) + item.x * 0.8 + item.y * 0.6 + (index / sparkleCount) * Math.PI * 2;
-      const orbitX = cx + Math.cos(angle) * outer * (0.62 + index * 0.14);
-      const orbitY = cy + Math.sin(angle) * outer * 0.58;
-      ctx.globalAlpha = 0.78 - index * 0.14;
-      ctx.beginPath();
-      ctx.arc(orbitX, orbitY, Math.max(1.6, size * 0.045), 0, Math.PI * 2);
-      ctx.fill();
+    if (sparkleCount > 0) {
+      ctx.fillStyle = palette.spark || '#fff';
+      for (let index = 0; index < sparkleCount; index += 1) {
+        const angle = now * (palette.orbitSpeed || 0.0032) + item.x * 0.8 + item.y * 0.6 + (index / sparkleCount) * Math.PI * 2;
+        const orbitX = cx + Math.cos(angle) * outer * (0.62 + index * 0.14);
+        const orbitY = cy + Math.sin(angle) * outer * 0.58;
+        ctx.globalAlpha = 0.78 - index * 0.14;
+        ctx.beginPath();
+        ctx.arc(orbitX, orbitY, Math.max(1.6, size * 0.045), 0, Math.PI * 2);
+        ctx.fill();
+      }
     }
 
     ctx.restore();
@@ -5037,17 +5966,20 @@
     if (!head || comboCount <= 1 || gameOver) return;
 
     const size = currentCellSize();
+    const fxQuality = getVisualFxQuality();
     const cx = (head.x + 0.5) * size;
     const cy = (head.y + 0.5) * size;
     const intensity = Math.min(1, comboCount / 8);
+    const supernova = comboCount >= 6;
+    const cataclysm = comboCount >= 10;
     const outer = size * (0.66 + intensity * 0.34 + Math.sin(now * 0.018) * 0.04);
 
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
 
     const aura = ctx.createRadialGradient(cx, cy, size * 0.14, cx, cy, outer);
-    aura.addColorStop(0, jackpotMode ? 'rgba(255, 79, 163, 0.22)' : 'rgba(125, 255, 178, 0.18)');
-    aura.addColorStop(0.45, 'rgba(255, 228, 140, 0.18)');
+    aura.addColorStop(0, cataclysm ? 'rgba(255, 139, 224, 0.28)' : jackpotMode ? 'rgba(255, 79, 163, 0.22)' : 'rgba(125, 255, 178, 0.18)');
+    aura.addColorStop(0.45, supernova ? 'rgba(124, 248, 255, 0.2)' : 'rgba(255, 228, 140, 0.18)');
     aura.addColorStop(1, 'rgba(0,0,0,0)');
     ctx.fillStyle = aura;
     ctx.beginPath();
@@ -5061,14 +5993,50 @@
     ctx.arc(cx, cy, outer * 0.78, now * 0.006, now * 0.006 + Math.PI * 1.45);
     ctx.stroke();
 
-    ctx.fillStyle = 'rgba(255,255,255,0.88)';
-    for (let index = 0; index < 3; index += 1) {
-      const angle = now * 0.005 + index * (Math.PI * 2 / 3);
-      const sparkX = cx + Math.cos(angle) * outer * (0.86 + index * 0.04);
-      const sparkY = cy + Math.sin(angle) * outer * 0.72;
-      ctx.globalAlpha = 0.82 - index * 0.16;
+    if (fxQuality === 0) {
+      ctx.restore();
+      return;
+    }
+
+    if (supernova) {
+      ctx.globalAlpha = cataclysm ? 0.56 : 0.42;
+      ctx.strokeStyle = cataclysm ? 'rgba(255, 139, 224, 0.74)' : 'rgba(124,248,255,0.64)';
+      ctx.lineWidth = cataclysm ? 2.6 : 2.2;
       ctx.beginPath();
-      ctx.arc(sparkX, sparkY, Math.max(1.8, size * 0.05), 0, Math.PI * 2);
+      ctx.arc(cx, cy, outer * 1.02, -now * 0.004, -now * 0.004 + Math.PI * 1.62);
+      ctx.stroke();
+
+      ctx.translate(cx, cy);
+      const rayCount = cataclysm ? (fxQuality === 1 ? 6 : 8) : (fxQuality === 1 ? 4 : 6);
+      for (let ray = 0; ray < rayCount; ray += 1) {
+        ctx.save();
+        ctx.rotate(now * 0.0012 + ray * (Math.PI * 2 / rayCount));
+        ctx.strokeStyle = ray % 2 === 0 ? 'rgba(255,255,255,0.34)' : 'rgba(124,248,255,0.3)';
+        ctx.lineWidth = 1.4;
+        ctx.beginPath();
+        ctx.moveTo(size * 0.22, 0);
+        ctx.lineTo(size * (cataclysm ? 0.72 : 0.58), 0);
+        ctx.stroke();
+        ctx.restore();
+      }
+      ctx.translate(-cx, -cy);
+    }
+
+    ctx.fillStyle = 'rgba(255,255,255,0.88)';
+    const sparkCount = fxQuality === 1
+      ? (cataclysm ? 4 : supernova ? 3 : 2)
+      : cataclysm
+        ? 5
+        : supernova
+          ? 4
+          : 3;
+    for (let index = 0; index < sparkCount; index += 1) {
+      const angle = now * 0.005 + index * (Math.PI * 2 / sparkCount);
+      const sparkX = cx + Math.cos(angle) * outer * (0.86 + index * 0.05);
+      const sparkY = cy + Math.sin(angle) * outer * (supernova ? 0.84 : 0.72);
+      ctx.globalAlpha = Math.max(0.22, 0.82 - index * 0.13);
+      ctx.beginPath();
+      ctx.arc(sparkX, sparkY, Math.max(1.8, size * (cataclysm ? 0.064 : 0.05)), 0, Math.PI * 2);
       ctx.fill();
     }
 
@@ -5078,7 +6046,9 @@
   function drawComboBanner(now) {
     if (comboCount <= 1 || gameOver) return;
 
-    const label = `Combo x${comboCount}`;
+    const supernova = comboCount >= 6;
+    const cataclysm = comboCount >= 10;
+    const label = cataclysm ? `Cataclysm x${comboCount}` : supernova ? `Supernova x${comboCount}` : `Combo x${comboCount}`;
     const x = 12;
     const y = 12;
     const height = 38;
@@ -5090,13 +6060,25 @@
 
     const fill = ctx.createLinearGradient(x, y, x + width, y + height);
     fill.addColorStop(0, 'rgba(18, 23, 34, 0.92)');
-    fill.addColorStop(1, jackpotMode ? 'rgba(88, 18, 54, 0.94)' : 'rgba(78, 56, 16, 0.92)');
+    fill.addColorStop(1, cataclysm
+      ? 'rgba(82, 16, 74, 0.94)'
+      : supernova
+        ? 'rgba(26, 52, 82, 0.94)'
+        : jackpotMode
+          ? 'rgba(88, 18, 54, 0.94)'
+          : 'rgba(78, 56, 16, 0.92)');
 
     roundedRectPath(x, y, width, height, 14);
     ctx.fillStyle = fill;
     ctx.fill();
 
-    ctx.strokeStyle = jackpotMode ? 'rgba(255, 112, 183, 0.72)' : 'rgba(255, 228, 140, 0.74)';
+    ctx.strokeStyle = cataclysm
+      ? 'rgba(255, 139, 224, 0.82)'
+      : supernova
+        ? 'rgba(124, 248, 255, 0.76)'
+        : jackpotMode
+          ? 'rgba(255, 112, 183, 0.72)'
+          : 'rgba(255, 228, 140, 0.74)';
     ctx.lineWidth = 2;
     ctx.stroke();
 
@@ -5109,7 +6091,7 @@
     ctx.fillRect(x + sweepX, y - 6, 22, height + 12);
     ctx.restore();
 
-    ctx.fillStyle = '#ffeeb9';
+    ctx.fillStyle = cataclysm ? '#fff0fb' : supernova ? '#dffcff' : '#ffeeb9';
     ctx.textAlign = 'left';
     ctx.fillText(label, x + 14, y + 24);
     ctx.restore();
@@ -5214,6 +6196,72 @@
     ctx.shadowBlur = 0;
     ctx.fillStyle = angelRealm ? '#fff3cf' : '#f8fbff';
     ctx.fillText(realmMessage, canvas.width / 2, y + 21);
+    ctx.restore();
+  }
+
+  function drawStageBanner(now) {
+    if (!stageBanner || now >= stageBanner.until) return;
+
+    const lifeProgress = Math.min(1, (now - stageBanner.startedAt) / 260);
+    const fadeOut = Math.min(1, (stageBanner.until - now) / 260);
+    const alpha = Math.max(0, Math.min(lifeProgress, fadeOut));
+    const title = stageBanner.title || '';
+    const subtitle = stageBanner.subtitle || '';
+    const yBase = boss?.active ? 42 : 20;
+    const y = yBase - (1 - alpha) * 16;
+    const height = subtitle ? 48 : 36;
+
+    const tone = stageBanner.tone || 'normal';
+    const palette = tone === 'angel'
+      ? { start: 'rgba(88, 62, 16, 0.94)', end: 'rgba(154, 114, 28, 0.96)', edge: 'rgba(255, 236, 166, 0.84)', title: '#fff6da', subtitle: '#fff0bf', glow: 'rgba(255, 224, 138, 0.26)' }
+      : tone === 'boss'
+        ? { start: 'rgba(46, 16, 18, 0.96)', end: 'rgba(104, 36, 18, 0.98)', edge: 'rgba(255, 182, 116, 0.86)', title: '#fff1df', subtitle: '#ffd9bb', glow: 'rgba(255, 115, 64, 0.28)' }
+        : tone === 'perfect'
+          ? { start: 'rgba(10, 34, 44, 0.96)', end: 'rgba(18, 78, 108, 0.98)', edge: 'rgba(124, 248, 255, 0.86)', title: '#f1feff', subtitle: '#d8fbff', glow: 'rgba(124, 248, 255, 0.24)' }
+          : tone === 'endless'
+            ? { start: 'rgba(22, 17, 52, 0.96)', end: 'rgba(44, 28, 100, 0.98)', edge: 'rgba(168, 139, 250, 0.84)', title: '#f4efff', subtitle: '#e1d7ff', glow: 'rgba(168, 139, 250, 0.24)' }
+            : { start: 'rgba(11, 18, 31, 0.94)', end: 'rgba(19, 52, 45, 0.96)', edge: 'rgba(110, 231, 183, 0.82)', title: '#f6fffb', subtitle: '#d8fff0', glow: 'rgba(110, 231, 183, 0.22)' };
+
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.textAlign = 'center';
+    ctx.font = 'bold 18px Arial';
+    const titleWidth = ctx.measureText(title).width;
+    ctx.font = 'bold 12px Arial';
+    const subtitleWidth = subtitle ? ctx.measureText(subtitle).width : 0;
+    const width = Math.min(canvas.width - 32, Math.max(160, Math.max(titleWidth, subtitleWidth) + 40));
+    const x = (canvas.width - width) / 2;
+
+    const fill = ctx.createLinearGradient(x, y, x + width, y + height);
+    fill.addColorStop(0, palette.start);
+    fill.addColorStop(1, palette.end);
+    ctx.shadowBlur = 18;
+    ctx.shadowColor = palette.glow;
+    roundedRectPath(x, y, width, height, 18);
+    ctx.fillStyle = fill;
+    ctx.fill();
+    ctx.strokeStyle = palette.edge;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    ctx.save();
+    roundedRectPath(x, y, width, height, 18);
+    ctx.clip();
+    const sweepX = ((Math.sin(now * 0.0052) + 1) / 2) * (width + 46) - 46;
+    ctx.globalAlpha = 0.12;
+    ctx.fillStyle = 'rgba(255,255,255,0.94)';
+    ctx.fillRect(x + sweepX, y - 6, 24, height + 12);
+    ctx.restore();
+
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = palette.title;
+    ctx.font = 'bold 18px Arial';
+    ctx.fillText(title, canvas.width / 2, y + (subtitle ? 20 : 24));
+    if (subtitle) {
+      ctx.fillStyle = palette.subtitle;
+      ctx.font = 'bold 12px Arial';
+      ctx.fillText(subtitle, canvas.width / 2, y + 36);
+    }
     ctx.restore();
   }
 
@@ -5379,6 +6427,93 @@
     ctx.restore();
   }
 
+  function traceSnakeRibbonPath(points) {
+    if (!points.length) return;
+    ctx.beginPath();
+    ctx.moveTo(points[0].x, points[0].y);
+    if (points.length === 1) return;
+
+    for (let index = 1; index < points.length - 1; index += 1) {
+      const point = points[index];
+      const next = points[index + 1];
+      const midpointX = (point.x + next.x) / 2;
+      const midpointY = (point.y + next.y) / 2;
+      ctx.quadraticCurveTo(point.x, point.y, midpointX, midpointY);
+    }
+
+    const last = points[points.length - 1];
+    ctx.lineTo(last.x, last.y);
+  }
+
+  function drawTierBodyRibbon(progress, now = performance.now()) {
+    const profile = getTierRibbonProfile();
+    if (!profile || snake.length < 2) return;
+    const fxQuality = getVisualFxQuality();
+    if (fxQuality === 0 && snake.length > 10) return;
+
+    const size = currentCellSize();
+    const points = snake.map((seg, index) => {
+      const animated = getAnimatedSegment(index, progress) || seg;
+      return {
+        x: (animated.x + 0.5) * size,
+        y: (animated.y + 0.5) * size
+      };
+    });
+
+    const tail = points[points.length - 1];
+    const head = points[0];
+    const ribbonGradient = ctx.createLinearGradient(head.x, head.y, tail.x, tail.y);
+    const stops = profile.colors;
+    stops.forEach((color, index) => {
+      ribbonGradient.addColorStop(stops.length === 1 ? 0 : index / (stops.length - 1), color);
+    });
+
+    ctx.save();
+    ctx.globalCompositeOperation = 'screen';
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.shadowBlur = Math.max(8, size * profile.shadowBlur * (fxQuality === 1 ? 0.76 : 1));
+    ctx.shadowColor = profile.glow;
+    ctx.globalAlpha = (profile.outerAlpha + Math.sin(now * profile.pulseSpeed) * 0.05) * (fxQuality === 1 ? 0.82 : 1);
+    ctx.strokeStyle = ribbonGradient;
+    ctx.lineWidth = Math.max(5, size * profile.outerWidth);
+    traceSnakeRibbonPath(points);
+    ctx.stroke();
+
+    if (fxQuality > 0) {
+      ctx.shadowBlur = Math.max(6, size * profile.shadowBlur * 0.48);
+      ctx.globalAlpha = profile.innerAlpha * (fxQuality === 1 ? 0.88 : 1);
+      ctx.strokeStyle = profile.coreColor;
+      ctx.lineWidth = Math.max(2.4, size * profile.innerWidth);
+      traceSnakeRibbonPath(points);
+      ctx.stroke();
+    }
+
+    if (fxQuality > 0) {
+      const nodeStep = (snake.length > 18 ? profile.nodeStep + 1 : profile.nodeStep) + (fxQuality === 1 ? 1 : 0);
+      for (let index = 0; index < points.length; index += nodeStep) {
+        const point = points[index];
+        const angle = now * 0.0032 + index * 0.78;
+        const orbitRadius = size * profile.nodeRadius * (0.78 + Math.sin(now * 0.0024 + index) * 0.18);
+        const nodeSize = Math.max(1.8, size * profile.nodeSize);
+
+        ctx.globalAlpha = Math.max(0.12, profile.nodeAlpha - index * 0.02);
+        ctx.fillStyle = index % 2 === 0 ? profile.colors[index % profile.colors.length] : profile.coreColor;
+        ctx.beginPath();
+        ctx.arc(
+          point.x + Math.cos(angle) * orbitRadius,
+          point.y + Math.sin(angle) * orbitRadius,
+          nodeSize,
+          0,
+          Math.PI * 2
+        );
+        ctx.fill();
+      }
+    }
+
+    ctx.restore();
+  }
+
   function drawFloatingTexts() {
     floatingTexts = floatingTexts.filter(item => {
       item.y += item.vy;
@@ -5463,12 +6598,32 @@
     if (!fx || !head) return;
 
     const size = currentCellSize();
+    const fxQuality = getVisualFxQuality();
     const cx = (head.x + 0.5) * size;
     const cy = (head.y + 0.5) * size;
     const pulse = Math.sin(now * 0.006);
 
     ctx.save();
     ctx.globalCompositeOperation = 'screen';
+
+    if (fxQuality === 0) {
+      const arcRadius = size * (fx.slug === 'snakeifying' ? 0.5 : fx.slug === 'cosmic' ? 0.46 : 0.4);
+      ctx.globalAlpha = 0.5 + pulse * 0.04;
+      ctx.strokeStyle = fx.colors?.[0] || 'rgba(255,255,255,0.72)';
+      ctx.lineWidth = fx.slug === 'snakeifying' ? 2.4 : 1.9;
+      ctx.beginPath();
+      ctx.arc(cx, cy, arcRadius, now * 0.0022, now * 0.0022 + Math.PI * 1.56);
+      ctx.stroke();
+      ctx.globalAlpha = 0.22;
+      ctx.fillStyle = fx.colors?.[1] || 'rgba(255,255,255,0.38)';
+      ctx.beginPath();
+      ctx.arc(cx, cy, size * 0.18, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+      return;
+    }
+
+    const liteTierFx = fxQuality === 1;
 
     if (fx.slug === 'mythic') {
       const outer = size * 0.62 + pulse * size * 0.05;
@@ -5483,9 +6638,10 @@
       ctx.fill();
 
       ctx.translate(cx, cy);
-      for (let ray = 0; ray < 6; ray += 1) {
+      const rayCount = liteTierFx ? 4 : 6;
+      for (let ray = 0; ray < rayCount; ray += 1) {
         ctx.save();
-        ctx.rotate(now * 0.001 + ray * (Math.PI / 3));
+        ctx.rotate(now * 0.001 + ray * (Math.PI * 2 / rayCount));
         ctx.strokeStyle = ray % 2 === 0 ? 'rgba(255, 211, 105, 0.38)' : 'rgba(255, 245, 196, 0.26)';
         ctx.lineWidth = 1.6;
         ctx.beginPath();
@@ -5539,8 +6695,19 @@
         ctx.fill();
       }
     } else if (fx.slug === 'cosmic') {
+      const isNebula = fx.variant === 'nebula';
+      const cosmicFill = ctx.createRadialGradient(cx, cy, size * 0.08, cx, cy, size * 0.78);
+      cosmicFill.addColorStop(0, isNebula ? 'rgba(255, 104, 214, 0.16)' : 'rgba(255,255,255,0.08)');
+      cosmicFill.addColorStop(0.34, isNebula ? 'rgba(143, 156, 255, 0.14)' : 'rgba(143, 156, 255, 0.14)');
+      cosmicFill.addColorStop(0.66, isNebula ? 'rgba(88, 247, 232, 0.12)' : 'rgba(88, 247, 232, 0.1)');
+      cosmicFill.addColorStop(1, 'rgba(88, 247, 232, 0)');
+      ctx.fillStyle = cosmicFill;
+      ctx.beginPath();
+      ctx.arc(cx, cy, size * 0.78, 0, Math.PI * 2);
+      ctx.fill();
+
       ctx.translate(cx, cy);
-      ctx.strokeStyle = 'rgba(143, 156, 255, 0.46)';
+      ctx.strokeStyle = isNebula ? 'rgba(255, 104, 214, 0.42)' : 'rgba(143, 156, 255, 0.46)';
       ctx.lineWidth = 1.9;
       ctx.rotate(now * 0.0005);
       ctx.beginPath();
@@ -5551,16 +6718,32 @@
       ctx.beginPath();
       ctx.ellipse(0, 0, size * 0.26, size * 0.48, 0, 0, Math.PI * 2);
       ctx.stroke();
-      ctx.rotate(now * 0.0016);
-      ctx.strokeStyle = 'rgba(255,255,255,0.24)';
-      ctx.beginPath();
-      ctx.ellipse(0, 0, size * 0.36, size * 0.36, Math.PI / 4, 0, Math.PI * 2);
-      ctx.stroke();
+      if (!liteTierFx) {
+        ctx.rotate(now * 0.0016);
+        ctx.strokeStyle = 'rgba(255,255,255,0.24)';
+        ctx.beginPath();
+        ctx.ellipse(0, 0, size * 0.36, size * 0.36, Math.PI / 4, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      if (isNebula) {
+        ctx.fillStyle = 'rgba(255, 104, 214, 0.18)';
+        ctx.beginPath();
+        ctx.ellipse(-size * 0.12, size * 0.06, size * 0.3, size * 0.16, -0.3, 0, Math.PI * 2);
+        ctx.fill();
+        if (!liteTierFx) {
+          ctx.beginPath();
+          ctx.ellipse(size * 0.16, -size * 0.04, size * 0.24, size * 0.12, 0.28, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
       ctx.fillStyle = 'rgba(255,255,255,0.9)';
       ctx.beginPath();
       ctx.arc(size * 0.3, -size * 0.04, 2.2, 0, Math.PI * 2);
       ctx.arc(-size * 0.18, size * 0.31, 1.7, 0, Math.PI * 2);
-      ctx.arc(size * 0.02, -size * 0.34, 1.5, 0, Math.PI * 2);
+      if (!liteTierFx) {
+        ctx.arc(size * 0.02, -size * 0.34, 1.5, 0, Math.PI * 2);
+        ctx.arc(-size * 0.3, -size * 0.18, 1.3, 0, Math.PI * 2);
+      }
       ctx.fill();
     } else if (fx.slug === 'ascendant') {
       const beam = ctx.createLinearGradient(cx, cy - size * 1.02, cx, cy + size * 0.16);
@@ -5588,40 +6771,71 @@
       ctx.moveTo(cx - size * 0.24, cy - size * 0.46);
       ctx.lineTo(cx + size * 0.24, cy - size * 0.46);
       ctx.stroke();
+      ctx.strokeStyle = 'rgba(255, 224, 138, 0.34)';
+      ctx.beginPath();
+      ctx.arc(cx, cy - size * 0.22, size * 0.28, Math.PI * 1.1, Math.PI * 1.9);
+      ctx.stroke();
     } else if (fx.slug === 'snakeifying') {
-      const fill = ctx.createRadialGradient(cx, cy, size * 0.04, cx, cy, size * 0.72);
-      fill.addColorStop(0, 'rgba(0, 0, 0, 0.6)');
-      fill.addColorStop(0.18, 'rgba(0, 0, 0, 0.48)');
-      fill.addColorStop(0.38, 'rgba(127, 92, 255, 0.22)');
-      fill.addColorStop(0.62, 'rgba(255, 139, 224, 0.16)');
+      const isBlackhole = fx.variant === 'blackhole';
+      const isNebula = fx.variant === 'nebula';
+      const fill = ctx.createRadialGradient(cx, cy, size * 0.04, cx, cy, size * (isBlackhole ? 0.84 : 0.76));
+      fill.addColorStop(0, isBlackhole ? 'rgba(0, 0, 0, 0.72)' : 'rgba(0, 0, 0, 0.6)');
+      fill.addColorStop(0.16, isBlackhole ? 'rgba(0, 0, 0, 0.6)' : 'rgba(0, 0, 0, 0.48)');
+      fill.addColorStop(0.34, isNebula ? 'rgba(255, 104, 214, 0.18)' : 'rgba(127, 92, 255, 0.24)');
+      fill.addColorStop(0.54, 'rgba(88, 247, 232, 0.14)');
+      fill.addColorStop(0.7, 'rgba(255, 139, 224, 0.12)');
       fill.addColorStop(1, 'rgba(255, 139, 224, 0)');
       ctx.fillStyle = fill;
       ctx.beginPath();
-      ctx.arc(cx, cy, size * 0.72, 0, Math.PI * 2);
+      ctx.arc(cx, cy, size * (isBlackhole ? 0.84 : 0.76), 0, Math.PI * 2);
       ctx.fill();
 
       ctx.translate(cx, cy);
-      ctx.strokeStyle = 'rgba(255, 139, 224, 0.54)';
-      ctx.lineWidth = 2.3;
+      ctx.strokeStyle = isBlackhole ? 'rgba(255, 139, 224, 0.62)' : 'rgba(255, 139, 224, 0.54)';
+      ctx.lineWidth = isBlackhole ? 2.5 : 2.3;
       ctx.beginPath();
-      ctx.arc(0, 0, size * 0.42, now * 0.0028, now * 0.0028 + Math.PI * 1.45);
+      ctx.arc(0, 0, size * 0.42, now * 0.0028, now * 0.0028 + Math.PI * 1.52);
       ctx.stroke();
       ctx.strokeStyle = 'rgba(127, 92, 255, 0.46)';
       ctx.beginPath();
-      ctx.arc(0, 0, size * 0.28, -now * 0.0034, -now * 0.0034 + Math.PI * 1.35);
+      ctx.arc(0, 0, size * 0.28, -now * 0.0034, -now * 0.0034 + Math.PI * 1.42);
       ctx.stroke();
-      ctx.strokeStyle = 'rgba(88, 247, 232, 0.2)';
+      ctx.strokeStyle = 'rgba(88, 247, 232, 0.24)';
       ctx.beginPath();
-      ctx.arc(0, 0, size * 0.56, now * 0.0018, now * 0.0018 + Math.PI * 1.15);
+      ctx.arc(0, 0, size * 0.58, now * 0.0018, now * 0.0018 + Math.PI * 1.18);
       ctx.stroke();
-      for (let spiral = 0; spiral < 3; spiral += 1) {
+      if (isBlackhole) {
+        ctx.fillStyle = 'rgba(0,0,0,0.66)';
         ctx.beginPath();
-        const start = now * 0.002 + spiral * (Math.PI * 0.66);
+        ctx.arc(0, 0, size * 0.16, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      if (isNebula) {
+        ctx.fillStyle = 'rgba(255, 104, 214, 0.16)';
+        ctx.beginPath();
+        ctx.ellipse(-size * 0.12, size * 0.08, size * 0.32, size * 0.16, 0.22, 0, Math.PI * 2);
+        ctx.fill();
+        if (!liteTierFx) {
+          ctx.beginPath();
+          ctx.ellipse(size * 0.16, -size * 0.1, size * 0.26, size * 0.12, -0.3, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+      for (let spiral = 0; spiral < (liteTierFx ? 2 : 4); spiral += 1) {
+        ctx.beginPath();
+        const start = now * 0.0021 + spiral * (Math.PI * 0.5);
         ctx.moveTo(Math.cos(start) * size * 0.16, Math.sin(start) * size * 0.16);
         ctx.lineTo(Math.cos(start + 0.34) * size * 0.34, Math.sin(start + 0.34) * size * 0.34);
         ctx.lineTo(Math.cos(start + 0.68) * size * 0.52, Math.sin(start + 0.68) * size * 0.52);
         ctx.stroke();
       }
+      ctx.fillStyle = 'rgba(255,255,255,0.9)';
+      ctx.beginPath();
+      ctx.arc(Math.cos(now * 0.0025) * size * 0.34, Math.sin(now * 0.0025) * size * 0.34, 2, 0, Math.PI * 2);
+      if (!liteTierFx) {
+        ctx.arc(Math.cos(-now * 0.0021 + 1.8) * size * 0.48, Math.sin(-now * 0.0021 + 1.8) * size * 0.48, 1.6, 0, Math.PI * 2);
+      }
+      ctx.fill();
     }
 
     ctx.restore();
@@ -5630,14 +6844,17 @@
   function emitSkinTierAmbientParticles(head, now = performance.now()) {
     const fx = getSkinTierFxProfile();
     if (!fx || !head || now < nextSkinAmbientParticleAt) return;
+    const fxQuality = getVisualFxQuality();
+    const intervalScale = fxQuality === 0 ? 2.3 : fxQuality === 1 ? 1.45 : 1;
 
-    nextSkinAmbientParticleAt = now + fx.interval;
+    nextSkinAmbientParticleAt = now + (fx.interval * intervalScale);
     const size = currentCellSize();
     const anchors = [head];
-    if (snake.length > 5) anchors.push(snake[Math.max(1, Math.floor(snake.length * 0.45))]);
-    if (snake.length > 10 && currentGridSize() <= 12) anchors.push(snake[snake.length - 1]);
+    if (fxQuality > 0 && snake.length > 5) anchors.push(snake[Math.max(1, Math.floor(snake.length * 0.45))]);
+    if (fxQuality > 1 && snake.length > 10 && currentGridSize() <= 12) anchors.push(snake[snake.length - 1]);
 
-    const bursts = Math.min(anchors.length, fx.burst);
+    const burstBudget = fxQuality === 0 ? 1 : fxQuality === 1 ? Math.max(1, fx.burst - 2) : fx.burst;
+    const bursts = Math.min(anchors.length, burstBudget);
     for (let index = 0; index < bursts; index += 1) {
       const anchor = anchors[index];
       const angle = Math.random() * Math.PI * 2;
@@ -5747,6 +6964,7 @@
 
       if (snake.length) {
         drawSnakeTrail(animProgress);
+        drawTierBodyRibbon(animProgress, now);
         for (let index = snake.length - 1; index >= 1; index -= 1) {
           const seg = snake[index];
           const animated = getAnimatedSegment(index, animProgress) || seg;
@@ -5847,6 +7065,7 @@
       }
 
       drawRealmBanner(now);
+      drawStageBanner(now);
 
       const countdownState = getCountdownState(now);
       if (countdownState) {
@@ -5945,8 +7164,24 @@
     if (roundCapEl) roundCapEl.textContent = String(currentMaxRounds());
     if (xpEl) xpEl.textContent = angelRealm ? `${xp} • Lv ${xpLevel}` : '';
     if (statusEl) statusEl.textContent = tags.join(' + ');
-    if (gameFrameEl) gameFrameEl.classList.toggle('combo-live', currentScreen === 'game' && comboCount > 1 && !gameOver);
-    updateView();
+    if (gameFrameEl) {
+      gameFrameEl.classList.toggle('combo-live', currentScreen === 'game' && comboCount > 1 && !gameOver);
+      gameFrameEl.classList.toggle('combo-supernova', currentScreen === 'game' && comboCount >= 6 && !gameOver);
+    }
+    if (pauseBtn) {
+      pauseBtn.textContent = paused && !blessingSelectionOpen ? 'Resume' : 'Pause';
+      pauseBtn.disabled = blessingSelectionOpen || gameOver || isCountdownActive();
+    }
+    if (realmXpWrap) {
+      const inCheatRoom = window.location.hash === '#cheats';
+      const showRealmXp = currentScreen === 'game' && !inCheatRoom && angelRealm && !gameOver;
+      realmXpWrap.classList.toggle('hidden', !showRealmXp);
+    }
+    const needsFullViewRefresh = currentScreen !== 'game'
+      || blessingSelectionOpen
+      || gameOver
+      || window.location.hash === '#cheats';
+    if (needsFullViewRefresh) updateView();
   }
 
   function scheduleSpeedCommandParse() {
@@ -5991,6 +7226,8 @@
   function advanceProgress() {
     const maxRoundCount = currentMaxRounds();
     const maxLevelCount = currentMaxLevels();
+    const canAdvanceStage = round < maxRoundCount || level < maxLevelCount || angelRealm;
+    const flawlessClear = canAdvanceStage ? awardFlawlessRoundBonus() : false;
 
     if (round < maxRoundCount) {
       round += 1;
@@ -6006,6 +7243,8 @@
       spawnFoodIfMissing(spawnSafety);
       ensureObstaclesForRound(obstacleSafety);
       spawnAngelEntities();
+      resetRoundPerformance();
+      if (!flawlessClear) announceCurrentStage(1700);
     } else if (level < maxLevelCount) {
       level += 1;
       if (level === boardGrowthCapLevel() + 1) {
@@ -6026,6 +7265,7 @@
         emitFloatingText(snake[0].x, snake[0].y, `Level ${level}`, '#baffd7', { life: 40, scale: 1.2 });
       }
       showRealmMessage(`Level ${level} • fresh board`, 1800);
+      if (!flawlessClear) announceCurrentStage(2200);
     } else if (angelRealm) {
       startBossFight();
     } else {
@@ -6500,6 +7740,9 @@
         healOrb = null;
         playBossSfx('defeat');
         showRealmMessage(earnsAngelSkin ? 'Arch Angel defeated! Angel skin earned' : 'Arch Angel defeated!', 2600);
+        showStageBanner('Realm Cleansed', earnsAngelSkin ? 'Angel skin unlocked' : 'Arch Angel defeated', 2600, 'perfect');
+      } else {
+        maybeAdvanceBossPhase();
       }
     }
 
@@ -6581,9 +7824,15 @@
 
     if (!gameOver && currentScreen === 'game' && !paused && !countdownActive) {
       accumulator += delta;
-      while (accumulator >= tickMs) {
+      const maxStepsThisFrame = Math.max(1, getVisualFxQuality() + 1);
+      let stepsThisFrame = 0;
+      while (accumulator >= tickMs && stepsThisFrame < maxStepsThisFrame) {
         step();
         accumulator -= tickMs;
+        stepsThisFrame += 1;
+      }
+      if (accumulator >= tickMs) {
+        accumulator = Math.min(accumulator % tickMs, tickMs * 0.5);
       }
     }
 
@@ -6771,6 +8020,7 @@
     }
     if (button.dataset.action === 'save-account') saveCurrentProfile();
     if (button.dataset.action === 'load-account') loadSavedProfile();
+    if (button.dataset.action === 'open-local-web-save') openLocalWebCopyWithSave();
     if (button.dataset.action === 'copy-save-link') copyCurrentSaveLink();
     if (button.dataset.action === 'copy-save-code') copyCurrentSaveCode();
     if (button.dataset.action === 'import-save') importSavePayload();
@@ -6788,6 +8038,11 @@
   if (gameAudioToggleBtn) gameAudioToggleBtn.addEventListener('click', () => setAudioEnabled(!audioEnabled));
   if (fullscreenBtn) fullscreenBtn.addEventListener('click', toggleFullscreen);
   if (gameFullscreenBtn) gameFullscreenBtn.addEventListener('click', toggleFullscreen);
+  abilityAutoPickButtons.forEach(button => {
+    button.addEventListener('click', () => {
+      setAngelAutoPickChoice(button.dataset.autoBlessing);
+    });
+  });
   document.addEventListener('pointerdown', unlockAudio, { passive: true });
   touchButtons.forEach(button => {
     button.addEventListener('pointerdown', (event) => {
@@ -6803,7 +8058,9 @@
 
   normalizeSkinState();
   maybeImportSaveFromUrl();
+  maybeImportPendingLocalSync();
   renderAudioButtons();
+  renderBlessingAutoPickControls();
   updateView();
   resetGame();
   window.setInterval(() => {
